@@ -15,6 +15,7 @@ from pathgenerator import PDPathGenerator
 _bridge = None
 _bridge_lock = threading.RLock()
 _bridge_init_error = None
+_mouse_settings_active = False
 
 
 def _get_bridge():
@@ -28,6 +29,24 @@ def _get_bridge():
                 _bridge_init_error = RuntimeError(f"Bridge initialization failed: {exc}")
                 raise _bridge_init_error
         return _bridge
+
+
+def _ensure_mouse_settings():
+    global _mouse_settings_active
+    if _mouse_settings_active:
+        return
+    _get_bridge().mouse_settings_apply()
+    _mouse_settings_active = True
+
+
+def restore_mouse_settings():
+    global _mouse_settings_active
+    if _bridge is None or not _mouse_settings_active:
+        return
+    try:
+        _bridge.mouse_settings_restore()
+    finally:
+        _mouse_settings_active = False
 
 
 class BITMAPINFOHEADER(ctypes.Structure):
@@ -167,6 +186,7 @@ def _human_delay(min_delay=0.01, max_delay=0.03):
 
 def mouseDown(button='left', delay=0.16):
     _fail_safe_check()
+    _ensure_mouse_settings()
     _get_bridge().mouse_press(button=button)
     _human_delay(delay, delay + 0.02)
     _fail_safe_check()
@@ -215,12 +235,14 @@ def _fail_safe_check():
     name = getActiveWindowTitle()
     
     if p.LIMBUS_NAME not in name:
+        restore_mouse_settings()
         raise PauseException(name)
 
 
 def moveTo(x, y, duration=0.0, tween=easeInOutQuad, delay=0.09, humanize=True,
            mouse_velocity=0.65, noise=2.6, offset_x=0, offset_y=0):
     _fail_safe_check()
+    _ensure_mouse_settings()
 
     profile = get_macro_profile()
     if humanize:
@@ -378,6 +400,7 @@ def dragTo(x, y, duration=0.1, tween=easeInOutQuad, button='left', start_x=None,
 
 def scroll(clicks, x=None, y=None):
     _fail_safe_check()
+    _ensure_mouse_settings()
     _apply_macro_rhythm()
     if x is not None and y is not None:
         moveTo(x, y)

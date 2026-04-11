@@ -1,6 +1,7 @@
 import ctypes
 import os
 import sys
+import atexit
 from ctypes import c_char_p, c_int, c_uint8
 
 
@@ -131,9 +132,16 @@ class Bridge:
         self._dll = self._load_dll(dll_path)
         self._dll_path = str(getattr(self._dll, "_name", "unknown"))
         self._configure_signatures()
+        atexit.register(self._atexit_shutdown)
         self._opened = self._probe_is_open()
         if auto_open:
             self.open()
+
+    def _atexit_shutdown(self):
+        try:
+            self.close()
+        except Exception:
+            pass
 
     @staticmethod
     def _load_dll(dll_path):
@@ -186,6 +194,12 @@ class Bridge:
 
         self._dll.cg_last_error.argtypes = []
         self._dll.cg_last_error.restype = c_char_p
+
+        self._dll.cg_mouse_settings_apply.argtypes = []
+        self._dll.cg_mouse_settings_apply.restype = c_int
+
+        self._dll.cg_mouse_settings_restore.argtypes = []
+        self._dll.cg_mouse_settings_restore.restype = c_int
 
         self._dll.cg_mouse_move_relative.argtypes = [c_int, c_int]
         self._dll.cg_mouse_move_relative.restype = c_int
@@ -279,6 +293,12 @@ class Bridge:
 
     def mouse_move_relative(self, dx, dy):
         self._call("cg_mouse_move_relative", int(dx), int(dy))
+
+    def mouse_settings_apply(self):
+        self._call("cg_mouse_settings_apply")
+
+    def mouse_settings_restore(self):
+        self._call("cg_mouse_settings_restore")
 
     def mouse_scroll(self, wheel):
         self._call("cg_mouse_scroll", int(wheel))

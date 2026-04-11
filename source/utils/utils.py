@@ -86,6 +86,11 @@ def countdown(seconds): # no more than 99 seconds!
 def pause(other_win=None):
     print(f"Switched to window: {other_win}")
     logging.info(f"Execution paused")
+    if hasattr(gui, "restore_mouse_settings"):
+        try:
+            gui.restore_mouse_settings()
+        except Exception:
+            logging.exception("Failed to restore mouse settings during pause")
     if p.APP:
         QMetaObject.invokeMethod(p.APP, "to_pause", Qt.ConnectionType.QueuedConnection)
         p.pause_event.clear()
@@ -99,6 +104,11 @@ def pause(other_win=None):
 
 
 def close_limbus(error=None):
+    if hasattr(gui, "restore_mouse_settings"):
+        try:
+            gui.restore_mouse_settings()
+        except Exception:
+            logging.exception("Failed to restore mouse settings while closing")
     if p.LIMBUS_NAME in gui.getActiveWindowTitle():
         gui.hotkey('alt', 'f4')
     if p.APP: QMetaObject.invokeMethod(p.APP, "stop_execution", Qt.ConnectionType.QueuedConnection)

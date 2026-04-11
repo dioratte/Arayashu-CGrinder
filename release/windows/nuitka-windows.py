@@ -1,20 +1,59 @@
 import os
+import re
 import subprocess
 import sys
 
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 ENTRY = os.path.join(ROOT_DIR, "App.py")
+PARAMS_FILE = os.path.join(ROOT_DIR, "source", "utils", "params.py")
+
+
+def _read_app_version(default: str = "0.0.0") -> str:
+    try:
+        with open(PARAMS_FILE, "r", encoding="utf-8") as fh:
+            content = fh.read()
+    except OSError:
+        return default
+
+    match = re.search(r'^V\s*=\s*["\']([^"\']+)["\']', content, flags=re.MULTILINE)
+    if not match:
+        return default
+
+    return match.group(1).strip() or default
+
+
+def _as_windows_file_version(version: str) -> str:
+    parts = re.findall(r"\d+", version)
+    normalized = [str(int(p)) for p in parts[:4]]
+    while len(normalized) < 4:
+        normalized.append("0")
+    return ".".join(normalized)
 
 
 def _cmd(output_name: str, console_mode: str):
+    app_version = _read_app_version()
+    file_version = _as_windows_file_version(app_version)
+    company_name = "app"
+    product_name = "app"
+    file_description = "desktop app"
+    local_appdata = os.getenv("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), "AppData", "Local")
+    onefile_tempdir = os.path.join(local_appdata, "app", "onefile")
+
     return [
         sys.executable,
         "-m",
         "nuitka",
         "--onefile",
+        "--remove-output",
         "--enable-plugin=pyside6",
         "--assume-yes-for-downloads",
+        f"--company-name={company_name}",
+        f"--product-name={product_name}",
+        f"--file-description={file_description}",
+        f"--file-version={file_version}",
+        f"--product-version={app_version}",
+        f"--onefile-tempdir-spec={onefile_tempdir}",
         f"--output-dir={os.path.join(ROOT_DIR, 'build')}",
         f"--output-filename={output_name}",
         f"--windows-console-mode={console_mode}",
