@@ -14,7 +14,7 @@ class VersionChecker(QObject):
         self.manager.finished.connect(self._on_finished)
 
     def check(self):
-        req = QNetworkRequest(QUrl("https://api.github.com/repos/AlexWalp/Mirror-Dungeon-Bot/releases/latest"))
+        req = QNetworkRequest(QUrl("https://api.github.com/repos/Walpth/Charge-Grinder/releases/latest"))
         req.setRawHeader(b"User-Agent", b"MirrorDungeonBot-VersionChecker/1.0")
         req.setRawHeader(b"Accept", b"application/vnd.github.v3+json")
         req.setTransferTimeout(10000)
@@ -89,6 +89,7 @@ class BotWorker(QObject):
             logging.exception("Uncaught exception in BotWorker thread")  
             self.error.emit(str(e))
         finally:
+            self.stop_cache_thread()
             self.finished.emit()
 
     def start_cache_thread(self, teams, settings, hard):
@@ -102,3 +103,14 @@ class BotWorker(QObject):
         self.cache_thread.finished.connect(self.cache_thread.deleteLater)
 
         self.cache_thread.start()
+
+    def stop_cache_thread(self):
+        if not self.cache_thread:
+            return
+
+        if self.cache_thread.isRunning():
+            self.cache_thread.quit()
+            self.cache_thread.wait(3000)
+
+        self.cache_thread = None
+        self.cache_worker = None
