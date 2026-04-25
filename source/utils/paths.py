@@ -238,9 +238,9 @@ PACKS = {
     'TheUnloving'                 : ((1, 2), (1, 2)),
     'NagelundHammer'              : ((1,), (1,)),
     'FaithErosion'                : ((1, 2), (1,)),
-    'TheUnconfronting'            : ((3,), (3,)),
+    'TheUnconfronting'            : ((3,), (2, 3)),
     'NestWorkshopandTechnology'   : ((1, 2), (1,)),
-    'FallingFlowers'              : ((3,), (2,)),
+    'FallingFlowers'              : ((3,), (2, 3)),
     'TearfulThings'               : ((4, 5), (3, 4)),
     'TheUnchanging'               : ((), (4, 5)),
     'LakeWorld'                   : ((2,), (1,)),
@@ -259,18 +259,18 @@ PACKS = {
     'BladeandArtwork'             : ((), (5,)),
     'TheUnsevering'               : ((), (5,)),
     'HellsChicken'                : ((2,), (2,)),
-    'SEA'                         : ((2,), (2,)),
-    'MiracleinDistrict20'         : ((4,), (3,)),
+    'SEA'                         : ((2,), (2, 3)),
+    'MiracleinDistrict20'         : ((4,), (3, 4)),
     'toClaimTheirBones'           : ((4, 5), (3, 4)),
     'TimekillingTime'             : ((4, 5), (4, 5)),
     'MurderontheWARPExpress'      : ((4, 5), (4, 5)),
-    'TheNoonofViolet'             : ((4,), (3,)),
-    'Line1'                       : ((), (4, 5)),
+    'TheNoonofViolet'             : ((4,), (3, 4)),
+    'Line1'                       : ((), (5,)),
     'Line2'                       : ((), (4, 5)),
     'Line3'                       : ((), (5, 15)),
     'Line4'                       : ((), (5, 15)),
     'MiracleinDistrict20BokGak'   : ((), (4, 5)),
-    'FullStoppedbyaBullet'        : ((4,), (3,)),
+    'FullStoppedbyaBullet'        : ((4,), (3, 4)),
     'LCBRegularCheckup'           : ((5,), (5,)),
     'toClaimTheirBonesBokGak'     : ((), (4, 5)),
     'NocturnalSweeping'           : ((5,), (5,)),
@@ -378,3 +378,16 @@ def get_unique(pack_list):
 
 FLOORS_UNIQUE = get_unique(FLOORS)
 HARD_UNIQUE = get_unique(HARD_FLOORS)
+
+
+
+if __name__ == "__main__":
+    count = 0
+    for name, floors in PACKS.items():
+        easy, hard = floors
+        
+        if 5 in hard:
+            print(f"{name}")
+            count += 1
+        
+    print(count, "packs")
