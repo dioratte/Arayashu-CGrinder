@@ -37,8 +37,7 @@ def _cmd(output_name: str, console_mode: str):
     company_name = "app"
     product_name = "app"
     file_description = "desktop app"
-    local_appdata = os.getenv("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), "AppData", "Local")
-    onefile_tempdir = os.path.join(local_appdata, "app", "onefile")
+    onefile_tempdir = "{CACHE_DIR}/{COMPANY}/{PRODUCT}/{VERSION}"
 
     return [
         sys.executable,

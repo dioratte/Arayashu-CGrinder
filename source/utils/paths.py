@@ -281,6 +281,7 @@ PACKS = {
     'WARPExpressBokGak'           : ((), (4, 5)),
     'TheDuskofAmber'              : ((4, 5), (4, 5)),
     'LCBRegularCheckupBokGak'     : ((), (4, 5)),
+    'TwiningThreads'              : ((5,), (5,)),
     'SlicersDicers'               : ((5,), (4,)),
     'TobeCleaved'                 : ((2, 3), (1, 2)),
     'PiercersPenetrators'         : ((5,), (4,)),
