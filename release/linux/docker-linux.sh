@@ -32,6 +32,14 @@ if [ "$INSIDE_DOCKER" = "1" ]; then
       exit 1
     fi
 
+    # Not bundled by Nuitka for some reason
+    XCB_CURSOR_LIB="$(find /usr/lib64 /lib64 /usr/lib /lib -maxdepth 2 -type f -name 'libxcb-cursor.so.0*' 2>/dev/null | head -n 1)"
+    if [ -z "$XCB_CURSOR_LIB" ]; then
+      echo "ERROR: libxcb-cursor.so.0 was not found in the Docker image"
+      exit 1
+    fi
+    cp -a "$XCB_CURSOR_LIB" "$NUITKA_DIST_DIR/"
+
     cp -a "$NUITKA_DIST_DIR" "$OUT_DIR"
     chmod +x "$OUT_DIR/app"
     echo "Nuitka output prepared at $OUT_DIR"

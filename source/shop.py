@@ -318,7 +318,7 @@ def fuse_selected():
     wait_while_condition(lambda: not now.button("Confirm"), lambda: gui.press("space") if now.button("Confirm.2") else None, timer=1.5)
     connection()
     wait_while_condition(
-        lambda: loc.button("Confirm", wait=1), 
+        lambda: loc.button("Confirm", wait=0.5), 
         lambda: gui.press("space"), 
         interval=0.2
     )
@@ -760,7 +760,7 @@ def conf_gift():
     except RuntimeError:
         pass
     wait_while_condition(
-        condition=lambda: now.button("Confirm"),
+        condition=lambda: loc.button("Confirm", wait=0.5),
         action=lambda: gui.press("space")
     )
 
