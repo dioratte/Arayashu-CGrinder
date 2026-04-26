@@ -230,6 +230,7 @@ def move():
     if now.button("victory") or not now.button("Move"): return False
 
     if not now_rgb.button("Danteh"):
+        print("Case 0: Bus is out of view")
         gui.press("d")
         gui.press("a")
 
@@ -248,12 +249,14 @@ def move():
 
     adjust = 0
     if len(regions) == 0:
+        print("Case 2: No directions are visible")
         gui.press("space")
         if enter():
             logging.info("Entering unknown node")
             return True
         return False
     elif len(regions) == 1:
+        print("Case 3: No node search, only one direction")
         region_idx = next(iter(regions.keys()))
         region = regions[region_idx]
         _loc = LocatePreset(image=screenshot(region=region), v_comp=v_list[region_idx], conf=0.8, wait=False)
@@ -264,8 +267,10 @@ def move():
             return True
         return False
     elif all(k in regions for k in (0, 2)):
+        print("Case 4: No major adjustment needed for node search")
         position()
     else:
+        print("Case 5: Adjusting position for node search")
         inter_connect = get_connections(region=(1140, 230, 610, 370))
         adjust = check_connections(inter_connect)
         position(shift=adjust)
