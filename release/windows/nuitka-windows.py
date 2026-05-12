@@ -1,29 +1,23 @@
 import os
-import re
 import subprocess
 import sys
 
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 ENTRY = os.path.join(ROOT_DIR, "App.py")
-PARAMS_FILE = os.path.join(ROOT_DIR, "source", "utils", "params.py")
+VERSION_FILE = os.path.join(ROOT_DIR, "source", "utils", "version")
 
 
 def _read_app_version(default: str = "0.0.0") -> str:
     try:
-        with open(PARAMS_FILE, "r", encoding="utf-8") as fh:
-            content = fh.read()
+        with open(VERSION_FILE, "r", encoding="utf-8") as fh:
+            return fh.read().strip() or default
     except OSError:
         return default
 
-    match = re.search(r'^V\s*=\s*["\']([^"\']+)["\']', content, flags=re.MULTILINE)
-    if not match:
-        return default
-
-    return match.group(1).strip() or default
-
 
 def _as_windows_file_version(version: str) -> str:
+    import re
     parts = re.findall(r"\d+", version)
     normalized = [str(int(p)) for p in parts[:4]]
     while len(normalized) < 4:
@@ -60,7 +54,9 @@ def _cmd(output_name: str, console_mode: str):
         f"--include-data-dir={os.path.join(ROOT_DIR, 'ImageAssets', 'UI')}=ImageAssets/UI",
         f"--include-data-dir={os.path.join(ROOT_DIR, 'ImageAssets', 'AppUI')}=ImageAssets/AppUI",
         f"--include-data-files={os.path.join(ROOT_DIR, 'app_icon.ico')}=app_icon.ico",
-        f"--include-data-files={os.path.join(ROOT_DIR, 'source', 'utils', 'bridge', 'bridge.dll')}=bridge_assets/bridge.dll",
+        f"--include-data-files={VERSION_FILE}=source/utils/version",
+        f"--include-data-files={os.path.join(ROOT_DIR, 'source', 'utils', 'bridge', 'bridge.dll')}=move_assets/bridge.dll",
+        f"--include-data-files={os.path.join(ROOT_DIR, 'source', 'utils', 'movement', 'model.npz')}=move_assets/model.npz",
         "--nofollow-import-to=source.utils.os_x11_backend",
         ENTRY,
     ]

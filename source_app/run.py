@@ -1,5 +1,6 @@
 from source_app.utils import *
 from source_app.cache import CacheWorker
+from source.utils.paths import APP_VERSION
 
 from PySide6.QtCore import QUrl
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
@@ -34,7 +35,7 @@ class VersionChecker(QObject):
         try:
             j = json.loads(data)
             tag = j.get("tag_name", "").lstrip("vV")
-            is_up_to_date = self._compare_versions(tag, p.V)
+            is_up_to_date = self._compare_versions(tag, APP_VERSION)
         except Exception as e:
             print("Parse error:", e)
             is_up_to_date = True

@@ -56,8 +56,8 @@ def ego_click(best_ego):
         box = LocateGray.locate(PTH[i], image=image_best, region=(0, 495, 1920, 50), method=1, h_comp=h_comp, conf=0.6)
         if box:
             res = gui.center(box)
-            win_click(res, duration=0.1)
-            win_click(res, duration=0.1)
+            win_click(res)
+            win_click(res)
             break
     else:
         for i in ego:
@@ -65,8 +65,8 @@ def ego_click(best_ego):
             print(i, res)
             if res:
                 c0, c1 = gui.center(res)
-                win_click(c0, int(c1 + 200), duration=0.1)
-                win_click(c0, int(c1 + 200), duration=0.1)
+                win_click(c0, int(c1 + 200))
+                win_click(c0, int(c1 + 200))
                 break
         else:
             win_click(1850, 1000)
@@ -93,24 +93,24 @@ def select_ego():
     coords_x = get_lowskill()
     if len(coords_x) < 3: 
         # zayin kinda worked
-        for x in coords_x: win_click(x, 990, duration=0.1)
+        for x in coords_x: win_click(x, 990)
         return
     
     for x in coords_x: # zayin didn't work, so let's use something more deadly
-        win_click(x, 990, clicks=2, duration=0.1)
+        win_click(x, 990, clicks=2)
         time.sleep(0.1)
         ego_click(best2)
     check_selection()
     coords_x = get_lowskill()
     if len(coords_x) < 3: 
         # we winrate with this
-        for x in coords_x: win_click(x, 990, duration=0.1)
+        for x in coords_x: win_click(x, 990)
         return
     
     # even that didn't work, so let's go for damage
     check_selection("damage_on", st_clicks=1)
     coords_x = get_lowskill()
-    for x in coords_x: win_click(x, 990, duration=0.1)
+    for x in coords_x: win_click(x, 990)
 
 
 def is_ego():
@@ -200,7 +200,7 @@ def select_team():
     
     if now_rgb.button("arrow", conf=0.7):
         win_moveTo(191, 472)
-        win_dragTo(289, 884)
+        win_dragTo(289, 984)
         time.sleep(1)
 
     for i in range(4):
@@ -217,7 +217,7 @@ def select_team():
             if i != 0: gui.mouseUp()
             win_moveTo(196, 670)
             gui.mouseDown()
-            win_moveTo(193, 400, duration=0.3)
+            win_moveTo(193, 400)
             if i == 2: gui.mouseUp()
             time.sleep(0.3)
     else:
@@ -292,13 +292,12 @@ def chain(gear_start, gear_end, background):
     y -= 46
     for i in range(skill_num):
         if moves[i]:
-            win_moveTo(x + 68, y + 200, duration=0.01)
+            win_moveTo(x + 68, y + 190, duration=0.15, tsize=(20, 20))
         else:
-            win_moveTo(x + 68, y + 70, duration=0.01)
+            win_moveTo(x + 68, y + 80, duration=0.15, tsize=(20, 20))
         x += 115
     
-    win_moveTo(x + 68, y + 120, duration=0.01)
-    # gui.press("enter", 1, 0.1)
+    win_moveTo(x + 80, y + 140, duration=0.15, tsize=(30, 30))
     gui.mouseUp()
 
 
@@ -348,7 +347,7 @@ def fight(lux=False):
                     time.sleep(1)
             except gui.ImageNotFoundException:
                 if is_focused:
-                    win_click(1385, 930, duration=0.1)
+                    win_click(1385, 930)
                 gui.press("p", 1, 0.1)
                 time.sleep(0.5)
                 if not lux and p.HARD: select_ego()

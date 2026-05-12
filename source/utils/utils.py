@@ -54,6 +54,10 @@ def win_click(*args, **kwargs):
     comp = p.WINDOW[2] / 1920
     if x is not None and y is not None:
         x, y = int(p.WINDOW[0] + x*comp), int(p.WINDOW[1] + y*comp)
+
+    if "tsize" in kwargs:
+        kwargs["tsize"] = tuple(int(size * comp) for size in kwargs["tsize"])
+    
     gui.click(x, y, **kwargs)
 
 def win_moveTo(*args, **kwargs):
@@ -61,6 +65,9 @@ def win_moveTo(*args, **kwargs):
     else: x, y = args
     comp = p.WINDOW[2] / 1920
     x, y = int(p.WINDOW[0] + x*comp), int(p.WINDOW[1] + y*comp)
+
+    if "tsize" in kwargs:
+        kwargs["tsize"] = tuple(int(size * comp) for size in kwargs["tsize"])
     gui.moveTo(x, y, **kwargs)
 
 def win_dragTo(*args, **kwargs):
@@ -68,8 +75,11 @@ def win_dragTo(*args, **kwargs):
     else: x, y = args
     comp = p.WINDOW[2] / 1920
     x, y = int(p.WINDOW[0] + x*comp), int(p.WINDOW[1] + y*comp)
-    gui.dragTo(x, y, **kwargs)
 
+    if "tsize" in kwargs:
+        kwargs["tsize"] = tuple(int(size * comp) for size in kwargs["tsize"])
+
+    gui.dragTo(x, y, **kwargs)
 
 def countdown(seconds): # no more than 99 seconds!
     for i in range(seconds, 0, -1):
@@ -339,8 +349,8 @@ class Locate(): # if inputing np.ndarray, convert to BGR first!
                         res = click
                     else:
                         res = gui.center(res)
-                    win_moveTo(res, duration=0.1)
-                    gui.click(duration=0.1)
+                    win_moveTo(res)
+                    gui.click()
                     # if isinstance(template, str):
                     #     print(f"clicked {os.path.splitext(os.path.basename(template))[0]}")
                     # else: print("clicked image")

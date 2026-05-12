@@ -15,7 +15,7 @@ def check_enkephalin(shift=0): # 227
     if not is_full(shift=shift): return
 
     ClickAction((601 - shift, 1004), ver="ConfirmInvert.1").execute(click)
-    win_click(1208, 496, duration=0.5)
+    win_click(1208, 496)
     Action("ConfirmInvert.1", ver="connecting").execute(click)
     connection()
     time.sleep(0.5)
@@ -41,7 +41,7 @@ def select_thd_level():
             break
         
         win_moveTo(950, 540)
-        win_dragTo(950, 220, duration=0.5)
+        win_dragTo(950, 220)
         choices = LocateRGB.locate_all(PTH["EnterSmall"], region=REG["thd!"])
         if not choices:
             return

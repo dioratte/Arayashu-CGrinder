@@ -1,15 +1,19 @@
 import ctypes
 from ctypes import wintypes
-import numpy as np
 import time
 import math
 import random
 import threading
+
+import numpy as np
+
 import source.utils.params as p
 from source.utils.profiles import get_macro_profile, maybe_rhythm_jitter, randomize_with_profile
+from source.utils.movement.builder import build_trajectory
+from source.utils.movement.inertia import get_inherited_velocity, update_inertia
+from source.utils.movement.pointer_gain import update_pointer_scale, execute_trajectory
 
 from source.utils.bridge.bridge import Bridge
-from pathgenerator import PDPathGenerator
 
 
 _bridge = None
@@ -181,20 +185,73 @@ def center(target=None):
         width, height = get_screen_size()
         return (width // 2, height // 2)
 
+
+def get_virtual_screen_bounds():
+    x = user32.GetSystemMetrics(76)  # SM_XVIRTUALSCREEN
+    y = user32.GetSystemMetrics(77)  # SM_YVIRTUALSCREEN
+    width = user32.GetSystemMetrics(78)  # SM_CXVIRTUALSCREEN
+    height = user32.GetSystemMetrics(79)  # SM_CYVIRTUALSCREEN
+    return x, y, x + width, y + height
+
+
+def clip_region_to_virtual(region):
+    x, y, w, h = region
+    min_x, min_y, max_x, max_y = p.SCREEN
+
+    x2 = max(x, min_x)
+    y2 = max(y, min_y)
+
+    x_end = min(x + w, max_x)
+    y_end = min(y + h, max_y)
+
+    w2 = x_end - x2
+    h2 = y_end - y2
+
+    if w2 <= 0 or h2 <= 0:
+        return None
+
+    return x2, y2, w2, h2
+
+
 def _human_delay(min_delay=0.01, max_delay=0.03):
     time.sleep(random.uniform(min_delay, max_delay))
 
-def mouseDown(button='left', delay=0.16):
+
+def _profile_value(profile, key, default):
+    if profile is None:
+        return default
+    return profile.get(key, default)
+
+
+def _sample_hold_seconds(kind, profile=None):
+    """Sample hold duration from median/IQR and clamp to profile bounds."""
+    if kind == "click":
+        median_ms = float(_profile_value(profile, "click_hold_median_ms", 90.0))
+        iqr_ms = float(_profile_value(profile, "click_hold_iqr_ms", 18.0))
+        min_ms, max_ms = _profile_value(profile, "click_hold_bounds_ms", (38.0, 220.0))
+    else:
+        median_ms = float(_profile_value(profile, "key_hold_median_ms", 100.0))
+        iqr_ms = float(_profile_value(profile, "key_hold_iqr_ms", 31.0))
+        min_ms, max_ms = _profile_value(profile, "key_hold_bounds_ms", (32.0, 260.0))
+
+    sigma_ms = max(1.0, iqr_ms / 1.349)
+    sampled_ms = random.gauss(median_ms, sigma_ms)
+    sampled_ms = max(float(min_ms), min(float(max_ms), sampled_ms))
+    return sampled_ms / 1000.0
+
+
+def mouseDown(button='left', delay=0.16, jitter=0.04):
     _fail_safe_check()
     _ensure_mouse_settings()
     _get_bridge().mouse_press(button=button)
-    _human_delay(delay, delay + 0.02)
+    _human_delay(delay, delay + max(0.0, jitter))
     _fail_safe_check()
 
-def mouseUp(button='left', delay=0.16):
+
+def mouseUp(button='left', delay=0.16, jitter=0.05):
     _fail_safe_check()
     _get_bridge().mouse_release(button=button)
-    _human_delay(delay, delay + 0.02)
+    _human_delay(delay, delay + max(0.0, jitter))
     _fail_safe_check()
 
 
@@ -221,6 +278,8 @@ def _apply_macro_rhythm(profile=None):
     if pause > 0:
         time.sleep(pause)
 
+    _fail_safe_check()
+
 def set_failsafe(state=True):
     """Enable or disable the fail-safe feature"""
     global FAILSAFE_ENABLED
@@ -239,146 +298,100 @@ def _fail_safe_check():
         raise PauseException(name)
 
 
-def moveTo(x, y, duration=0.0, tween=easeInOutQuad, delay=0.09, humanize=True,
-           mouse_velocity=0.65, noise=2.6, offset_x=0, offset_y=0):
+def _point_distance(a, b):
+    return float(np.hypot(float(a[0]) - float(b[0]), float(a[1]) - float(b[1])))
+
+
+def _within_target_radius(a, b, radius=20.0):
+    return _point_distance(a, b) <= radius
+
+
+def _clamp_point_to_screen_bounds(x, y):
+    min_x, min_y, max_x, max_y = p.SCREEN
+    max_x = max(min_x, max_x - 1)
+    max_y = max(min_y, max_y - 1)
+    return (
+        int(round(min(max(float(x), min_x), max_x))),
+        int(round(min(max(float(y), min_y), max_y))),
+    )
+
+
+def _project_points_to_screen_bounds(points):
+    min_x, min_y, max_x, max_y = p.SCREEN
+    max_x = max(min_x, max_x - 1)
+    max_y = max(min_y, max_y - 1)
+
+    projected = np.asarray(points, dtype=float).copy()
+    projected[:, 0] = np.clip(projected[:, 0], min_x, max_x)
+    projected[:, 1] = np.clip(projected[:, 1], min_y, max_y)
+    return projected
+
+
+def _emit_rel_open_loop(dev, dx, dy):
+    _get_bridge().mouse_move_relative(int(dx), int(dy))
+
+
+def moveTo(x, y, duration=0, delay=0.0, tsize=(5.0, 5.0), offset_x=0, offset_y=0, curve=1, n_sub=None):
     _fail_safe_check()
     _ensure_mouse_settings()
 
-    profile = get_macro_profile()
-    if humanize:
-        delay = randomize_with_profile(delay, profile=profile, key="delay_jitter")
-    
-    duration += delay
     start_x, start_y = get_position()
+    end_x = int(round(x + offset_x))
+    end_y = int(round(y + offset_y))
+    end_x, end_y = _clamp_point_to_screen_bounds(end_x, end_y)
 
-    if mouse_velocity == 0.65:
-        mouse_velocity = profile["mouse_velocity"]
-    if noise == 2.6:
-        noise = profile["noise"]
+    tsize = tsize if tsize else (20.0, 20.0)
+    min_target_size = min(tsize)
+    if _within_target_radius((start_x, start_y), (end_x, end_y), radius=min_target_size):
+        return
 
-    if humanize:
-        endpoint_jitter = profile["endpoint_jitter_px"]
-        x += random.randint(-endpoint_jitter, endpoint_jitter)
-        y += random.randint(-endpoint_jitter, endpoint_jitter)
+    if delay > 0:
+        profile = get_macro_profile()
+        time.sleep(randomize_with_profile(delay, profile=profile, key="delay_jitter"))
 
-        gen = PDPathGenerator()
-        path, progress, steps, params = gen.generate_path(
-            start_x=start_x, start_y=start_y,
-            end_x=x, end_y=y,
-            mouse_velocity=mouse_velocity,
-            noise=noise,
-            offset_x=offset_x, offset_y=offset_y
+    duration_override = duration if duration and duration > 0 else None
+
+    while True:
+        traj = build_trajectory(
+            (start_x, start_y),
+            (end_x, end_y),
+            duration_override=duration_override,
+            target_width=tsize[0],
+            target_height=tsize[1],
+            initial_velocity=get_inherited_velocity(),
+            curviness=curve,
+            n_submovements=n_sub
         )
-        steps = max(10, steps*5.6)
 
-        if duration > delay:
-            total_duration = duration
-        else:
-            total_duration = params.get('duration', duration)
-        
-        total_duration *= 5.6
-        step_delay = total_duration / steps if steps > 0 else 0.01
-        step_jitter_min, step_jitter_max = profile["step_sleep_jitter"]
+        raw_path = _project_points_to_screen_bounds(traj["points"])
+        times = traj["times"]
 
-        prev_int_x = int(round(start_x))
-        prev_int_y = int(round(start_y))
+        raw_delta = execute_trajectory(None, raw_path, times, emit_func=_emit_rel_open_loop)
+        start_x, start_y = get_position()
 
-        for i, (cur_x, cur_y) in enumerate(path):
-            target_int_x = int(round(cur_x))
-            target_int_y = int(round(cur_y))
-            
-            dx = target_int_x - prev_int_x
-            dy = target_int_y - prev_int_y
-            
-            if dx != 0 or dy != 0:
-                _get_bridge().mouse_move_relative(dx, dy)
-                
-            prev_int_x = target_int_x
-            prev_int_y = target_int_y
-
-            if i < steps - 1:
-                sleep_time = step_delay * random.uniform(step_jitter_min, step_jitter_max)
-                time.sleep(max(0.001, sleep_time))
-
-    else:
-        distance = math.hypot(x - start_x, y - start_y)
-        time_steps = max(2, int(duration * 400))
-        distance_steps = int(distance / 1)
-        steps = max(3, min(max(time_steps, distance_steps), 1000))
-
-        prev_int_x = int(round(start_x))
-        prev_int_y = int(round(start_y))
-
-        for i in range(steps):
-            progress = tween(i / (steps - 1))
-            current_x = start_x + (x - start_x) * progress
-            current_y = start_y + (y - start_y) * progress
-
-            # Clamp to avoid overshoot
-            current_x = min(max(current_x, min(start_x, x)), max(start_x, x))
-            current_y = min(max(current_y, min(start_y, y)), max(start_y, y))
-
-            target_int_x = int(round(current_x))
-            target_int_y = int(round(current_y))
-
-            dx = target_int_x - prev_int_x
-            dy = target_int_y - prev_int_y
-            
-            if dx != 0 or dy != 0:
-                _get_bridge().mouse_move_relative(dx, dy)
-                
-            prev_int_x = target_int_x
-            prev_int_y = target_int_y
-
-            step_sleep = duration / (steps - 1)
-            if i < steps - 1 and step_sleep > 0:
-                time.sleep(step_sleep)
-
-    timeout_start = time.time()
-    while time.time() - timeout_start < 0.08:
-        actual_x, actual_y = get_position()
-        dx = int(round(x - actual_x))
-        dy = int(round(y - actual_y))
-
-        if abs(dx) <= 1 and abs(dy) <= 1:
+        if not np.any(np.abs(raw_delta) > 15.0) or \
+           _within_target_radius((start_x, start_y), (end_x, end_y), radius=min_target_size):
             break
 
-        step_dx = max(-10, min(10, dx))
-        step_dy = max(-10, min(10, dy))
-        _get_bridge().mouse_move_relative(step_dx, step_dy)
-        time.sleep(0.001)
+        update_pointer_scale(raw_delta, raw_path[0], (start_x, start_y))
+        _fail_safe_check()
 
-    human_final_min, human_final_max = profile["final_delay_human"]
-    nonhuman_final_min, nonhuman_final_max = profile["final_delay_nonhuman"]
-    final_delay = (
-        random.uniform(human_final_min, human_final_max)
-        if humanize
-        else random.uniform(nonhuman_final_min, nonhuman_final_max)
-    )
-    time.sleep(final_delay)
-    _fail_safe_check()
+    update_inertia(raw_path, times)
 
 
-def click(x=None, y=None, button='left', clicks=1, interval=0.1, duration=0.0, tween=easeInOutQuad, delay=0.03):
+def click(x=None, y=None, button='left', clicks=1, interval=0.15, duration=0.0, tsize=(5.0, 5.0), delay=0.03):
     _fail_safe_check()
     profile = get_macro_profile()
     _apply_macro_rhythm(profile)
     delay = randomize_with_profile(delay, profile=profile, key="delay_jitter")
-    interval += 0.05
     
     if x is not None and y is not None:
-        moveTo(x, y, duration, tween, delay=delay+0.02)
-        
-    elif duration > 0:
-        current_x, current_y = get_position()
-        moveTo(current_x, current_y, duration, tween, delay=delay+0.02)
-    else:
-        time.sleep(0.02)
+        moveTo(x, y, duration=duration, delay=delay+0.02, tsize=tsize)
 
     for i in range(clicks):
         _fail_safe_check()
-        
-        mouseDown(button, delay=delay)
+        click_hold = _sample_hold_seconds("click", profile=profile)
+        mouseDown(button, delay=click_hold, jitter=0.0)
         mouseUp(button, delay=delay)
         
         if interval > 0 and i < clicks - 1:
@@ -386,16 +399,20 @@ def click(x=None, y=None, button='left', clicks=1, interval=0.1, duration=0.0, t
             _fail_safe_check()
 
 
-def dragTo(x, y, duration=0.1, tween=easeInOutQuad, button='left', start_x=None, start_y=None, humanize=False):
+def dragTo(x, y, duration=0.1, button='left', tsize=(5.0, 5.0), start_x=None, start_y=None, hook=False):
     _fail_safe_check()
     _apply_macro_rhythm()
     
     if start_x is not None and start_y is not None:
-        moveTo(start_x, start_y)
+        moveTo(start_x, start_y, tsize=tsize)
 
     mouseDown(button, delay=0.03)
-    moveTo(x, y, duration, tween, humanize=humanize)
+    moveTo(x, y, duration=duration, tsize=tsize, n_sub=1)
     mouseUp(button, delay=0.03)
+
+    if hook:
+        mouseDown(button, delay=0.03)
+        mouseUp(button, delay=0.03)
     _fail_safe_check()
 
 def scroll(clicks, x=None, y=None):
@@ -414,7 +431,7 @@ def scroll(clicks, x=None, y=None):
     _human_delay()
 
 
-def press(keys, presses=1, interval=0.1, delay=0.09):
+def press(keys, presses=1, interval=0.1, delay=0.09): #CHANGE
     profile = get_macro_profile()
     _apply_macro_rhythm(profile)
     time.sleep(randomize_with_profile(delay, profile=profile, key="delay_jitter"))
@@ -423,15 +440,19 @@ def press(keys, presses=1, interval=0.1, delay=0.09):
         keys = [keys]
 
     for _p in range(presses):
+        if isinstance(keys, str):
+            keys = [keys]
+
         _fail_safe_check()
-        if len(keys) > 1:
-            _get_bridge().key_multi_press(keys)
-            time.sleep(randomize_with_profile(delay, profile=profile, key="delay_jitter"))
-            _get_bridge().key_release_all()
-        elif len(keys) == 1:
-            _get_bridge().key_press(keys[0])
-            time.sleep(randomize_with_profile(delay, profile=profile, key="delay_jitter"))
-            _get_bridge().key_release_all()
+        _get_bridge().key_multi_press(keys)
+        key_hold = _sample_hold_seconds("key", profile=profile)
+        time.sleep(key_hold)
+        _get_bridge().key_release_all()
+        # elif len(keys) == 1:
+        #     _get_bridge().key_press(keys[0])
+        #     key_hold = _sample_hold_seconds("key", profile=profile)
+        #     time.sleep(key_hold)
+        #     _get_bridge().key_release_all()
 
         if interval > 0 and _p < presses - 1:
             time.sleep(randomize_with_profile(interval, profile=profile, key="key_interval_jitter"))
@@ -442,25 +463,13 @@ def hotkey(*args, **kwargs):
 
 
 def check_window():
-    user32 = ctypes.windll.user32
-
-    vx = user32.GetSystemMetrics(76)
-    vy = user32.GetSystemMetrics(77)
-    vw = user32.GetSystemMetrics(78)
-    vh = user32.GetSystemMetrics(79)
-
-    vright = vx + vw
-    vbottom = vy + vh
-
+    min_x, min_y, max_x, max_y = p.SCREEN
     left, top, width, height = p.WINDOW
-    right = left + width
-    bottom = top + height
-
     in_bounds = (
-        left >= vx and
-        top >= vy and
-        right <= vright and
-        bottom <= vbottom
+        left >= min_x and
+        top >= min_y and
+        left + width <= max_x and
+        top + height <= max_y
     )
     if not in_bounds:
         raise WindowError("Window is partially or completely out of screen bounds!")
@@ -493,6 +502,7 @@ def set_window():
     top += (client_height - target_height) // 2
 
     p.WINDOW = (left, top, target_width, target_height)
+    p.SCREEN = get_virtual_screen_bounds()
     check_window()
 
     if int(client_width / 16) != int(client_height / 9):

@@ -24,6 +24,8 @@ if [ "$INSIDE_DOCKER" = "1" ]; then
       --include-data-dir="$ROOT_DIR/ImageAssets/UI"=ImageAssets/UI \
       --include-data-dir="$ROOT_DIR/ImageAssets/AppUI"=ImageAssets/AppUI \
       --include-data-files="$ROOT_DIR/app.png"=app.png \
+      --include-data-files="$ROOT_DIR/source/utils/version"=source/utils/version \
+      --include-data-files="$ROOT_DIR/source/utils/movement/model.npz"=move_assets/model.npz \
       "$ROOT_DIR/App.py"
 
     NUITKA_DIST_DIR="$(find "$NUITKA_OUT_DIR" -maxdepth 1 -mindepth 1 -type d -name '*.dist' | head -n 1)"

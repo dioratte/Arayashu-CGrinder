@@ -5,6 +5,7 @@ priority = {"Event": 0, "Normal": 52, "Miniboss": 67, "Risky": 87, "Focused": 77
 v_list = [0.8, 0.9, 1]
 d_list = [None, -0.1, -0.19]
 keys_map = {0: "w", 1: "d", 2: "s"}
+fallback_map = {0: "up", 1: "down", 2: "left"}
 
 
 def is_boss(region=(624, 376, 282, 275)):
@@ -67,8 +68,7 @@ def get_node_name(_loc, region):
 def position(shift=0):
     x, y = random.randint(1500, 1700), random.randint(300, 500)
     win_moveTo(x, y)
-    win_dragTo(x - 275, y + 103 + shift*315, duration=0.4)
-    win_click()
+    win_dragTo(x - 275, y + 103 + shift*315, duration=0.41, hook=True) #
 
 def directions(is_aligned=True):
     options = {
@@ -238,6 +238,7 @@ def move():
             return False
     
     regions = directions(is_aligned=False)
+    print(f"Visible directions: {list(regions.keys())}")
 
     adjust = 0
     if len(regions) == 0:

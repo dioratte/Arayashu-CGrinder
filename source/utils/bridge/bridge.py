@@ -1,3 +1,9 @@
+"""
+Bridge bridge bridge! This is just a python port.
+
+If you are curious about bridge.dll implementation, you can contact Walpth on Discord.
+"""
+
 import ctypes
 import os
 import sys
@@ -155,7 +161,7 @@ class Bridge:
 
         # Nuitka onefile extraction layout
         root_dir = os.path.abspath(os.path.join(local_dir, "..", "..", ".."))
-        candidates.append(os.path.join(root_dir, "bridge_assets", "bridge.dll"))
+        candidates.append(os.path.join(root_dir, "move_assets", "bridge.dll"))
 
         selected_path = None
         for path in candidates:

@@ -923,7 +923,7 @@ class MyApp(QWidget):
         # if not sm.is_version("3.0.0"): # reset old gift selection
         #     sm.save_config(7, {}, all=True)
         #     data = {}
-        #     sm.set_version(p.V)
+        #     sm.set_version(Bot.APP_VERSION)
         # if isinstance(data, list): # old format
         #     data = {}
         self.keywordless = {}
@@ -1451,7 +1451,7 @@ class ScrollableMyApp(QMainWindow):
         self.base_width = 700
         self.base_height = 785
         
-        self.setWindowTitle(f"ChargeGrinder v{p.V}")
+        self.setWindowTitle(f"ChargeGrinder v{Bot.APP_VERSION}")
         self.setWindowIcon(QIcon(Bot.ICON))
         
         self.scroll_area = QScrollArea()

@@ -12,6 +12,19 @@ def _runtime_base_path():
 
 BASE_PATH = _runtime_base_path()
 
+VERSION_FILE = os.path.join(BASE_PATH, "source", "utils", "version")
+
+
+def _read_app_version(default="0.0.0"):
+    try:
+        with open(VERSION_FILE, "r", encoding="utf-8") as fh:
+            return fh.read().strip() or default
+    except OSError:
+        return default
+
+
+APP_VERSION = _read_app_version()
+
 
 ASSETS_DIR = os.path.join(BASE_PATH,"ImageAssets/UI")
 
@@ -282,6 +295,7 @@ PACKS = {
     'TheDuskofAmber'              : ((4, 5), (4, 5)),
     'LCBRegularCheckupBokGak'     : ((), (4, 5)),
     'TwiningThreads'              : ((5,), (5,)),
+    'NocturnalSweepingBokGak'     : ((), (4, 5)),
     'SlicersDicers'               : ((5,), (4,)),
     'TobeCleaved'                 : ((2, 3), (1, 2)),
     'PiercersPenetrators'         : ((5,), (4,)),
@@ -333,6 +347,16 @@ PACKS = {
     'BeautifulVoice'              : ((), (15,)),
     'TheGreenDawn'                : ((), (15,)),
     'CertainLibrary'              : ((), (15,)),
+    'CodePurple'                  : ((), (15,)),
+    'BearersofWeight'             : ((), (15,)),
+    'Line1Madness'                : ((), (15,)),
+    'BlessedCarnival'             : ((), (15,)),
+    'FairyTale'                   : ((), (15,)),
+    'IchthyicOdor'                : ((), (15,)),
+    'CompleteExtermination'       : ((), (15,)), 
+    'LaManchaMaster'              : ((), (15,)),
+    'Chachihu'                    : ((), (15,)),
+    'MidspringDream2'             : ((), (15,)),
 }
 
 def packs_to_floors(packs, hard=False):

@@ -212,7 +212,6 @@ or manually install:
 - `opencv-python-headless`
 - `numpy`
 - `PySide6`
-- `pathgenerator`
 - `python-xlib` _(Linux only)_
 - `mss` _(Linux only)_
 - `evdev` _(Linux only)_

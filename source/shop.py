@@ -217,11 +217,7 @@ def inventory_check(reg, h, uptie_det=True):
 
 def browse(step=128, adj=0, dur=0.3, pr_end=True):
     win_moveTo(1229, 480)
-    gui.mouseDown()
-    win_moveTo(1227, 480 - step + adj, duration=dur, humanize=False)
-    gui.mouseUp()
-    if pr_end:
-        win_click(1229, 480)
+    win_dragTo(1229, 480 - step + adj, duration=dur, hook=pr_end)
 
 def close_panel():
     if now.button(p.SUPER): return
@@ -951,11 +947,11 @@ def buy_skill3():
         return
 
     ClickAction((coord[0], coord[1] - 120), ver="replace").execute(click)
-    win_click(1442, 497, duration=0.2)
-    win_click(1187, 798, duration=0.2)
+    win_click(1442, 497)
+    win_click(1187, 798)
     if not wait_while_condition(lambda: not loc.button("connecting", wait=0.5), lambda: win_click(1187, 798), timer=1):
-        win_click(953, 497, duration=0.2)
-        win_click(1187, 798, duration=0.2)
+        win_click(953, 497)
+        win_click(1187, 798)
         if not wait_while_condition(lambda: not loc.button("connecting", wait=0.5), lambda: win_click(1187, 798), timer=2):
             win_click(772, 800)
             return

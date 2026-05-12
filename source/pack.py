@@ -191,7 +191,7 @@ def pack():
             region = regions[id]
             x, y = (region[0] + (region[2] // 2), region[1] + (region[3] // 2))
             win_moveTo(x, y)
-            win_dragTo(x, y + 300, duration=0.5, button="left")
+            win_dragTo(x, y + 300, duration=0.31)
             break
         if skip != skips:
             win_click(1617, 62)
