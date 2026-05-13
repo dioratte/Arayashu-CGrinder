@@ -431,7 +431,7 @@ def scroll(clicks, x=None, y=None):
     _human_delay()
 
 
-def press(keys, presses=1, interval=0.1, delay=0.09): #CHANGE
+def press(keys, presses=1, interval=0.1, delay=0.09):
     profile = get_macro_profile()
     _apply_macro_rhythm(profile)
     time.sleep(randomize_with_profile(delay, profile=profile, key="delay_jitter"))
@@ -443,16 +443,14 @@ def press(keys, presses=1, interval=0.1, delay=0.09): #CHANGE
         if isinstance(keys, str):
             keys = [keys]
 
-        _fail_safe_check()
-        _get_bridge().key_multi_press(keys)
-        key_hold = _sample_hold_seconds("key", profile=profile)
-        time.sleep(key_hold)
-        _get_bridge().key_release_all()
-        # elif len(keys) == 1:
-        #     _get_bridge().key_press(keys[0])
-        #     key_hold = _sample_hold_seconds("key", profile=profile)
-        #     time.sleep(key_hold)
-        #     _get_bridge().key_release_all()
+        for key in keys:
+            _fail_safe_check()
+            _get_bridge().key_press(key)
+            key_hold = _sample_hold_seconds("key", profile=profile)
+            time.sleep(key_hold)
+
+        for key in reversed(keys):
+            _get_bridge().key_release(key)
 
         if interval > 0 and _p < presses - 1:
             time.sleep(randomize_with_profile(interval, profile=profile, key="key_interval_jitter"))

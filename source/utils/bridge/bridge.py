@@ -225,6 +225,9 @@ class Bridge:
         self._dll.cg_key_press.argtypes = [c_uint8]
         self._dll.cg_key_press.restype = c_int
 
+        self._dll.cg_key_release.argtypes = [c_uint8]
+        self._dll.cg_key_release.restype = c_int
+
         self._dll.cg_key_release_all.argtypes = []
         self._dll.cg_key_release_all.restype = c_int
 
@@ -320,6 +323,9 @@ class Bridge:
 
     def key_press(self, key):
         self._call("cg_key_press", self._key_code(key))
+
+    def key_release(self, key):
+        self._call("cg_key_release", self._key_code(key))
 
     def key_release_all(self):
         self._call("cg_key_release_all")

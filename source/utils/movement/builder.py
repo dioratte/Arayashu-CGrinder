@@ -22,6 +22,7 @@ else:
 CFG: dict = {
     "model_path": model_path,
     "iv_heading_blend": 0.40,
+    "iv_heading_decay_frac": 0.35,
     "bias_along_std": 3.0,
     "bias_perp_std":  2.0,
     "heading_residual_scale": 0.75,
@@ -104,7 +105,7 @@ def sample_duration(dist, override=None):
         return float(override)
     if dist <= 0:
         return 0.05
-    base_duration = -0.317 + 0.161 * np.log2(1 + dist / 20.0) + 0.15
+    base_duration = -0.317 + 0.161 * np.log2(1 + dist / 20.0) + 0.1
     sigma = 0.153 
     final_duration = base_duration + np.random.normal(0, sigma)
     return float(np.clip(final_duration, 0.05, 5.0))
@@ -183,17 +184,14 @@ def _integrate_curvature_path(
     ex, ey = float(end[0]),   float(end[1])
     chord_heading = math.atan2(ey - sy, ex - sx)
 
-    # Initial heading
+    # Initial heading bias
+    init_heading_delta = 0.0
     if initial_velocity is not None:
         iv = np.asarray(initial_velocity, dtype=float)
         if float(np.linalg.norm(iv)) > 1.0:
             iv_heading = math.atan2(float(iv[1]), float(iv[0]))
             blend = float(CFG["iv_heading_blend"])
-            init_heading = chord_heading + blend * _angle_diff(iv_heading, chord_heading)
-        else:
-            init_heading = chord_heading
-    else:
-        init_heading = chord_heading
+            init_heading_delta = blend * _angle_diff(iv_heading, chord_heading)
 
     # Geometry integration
     dt_geom = duration / n_geom
@@ -201,7 +199,12 @@ def _integrate_curvature_path(
 
     theta_abs = chord_heading + theta_rel_geom
     theta_abs -= theta_abs[0]
-    theta_abs += init_heading
+    theta_abs += chord_heading
+    if abs(init_heading_delta) > 1e-9:
+        u = np.linspace(0.0, 1.0, n_geom)
+        decay_frac = float(np.clip(CFG["iv_heading_decay_frac"], 1e-6, 1.0))
+        decay = np.clip(1.0 - u / decay_frac, 0.0, 1.0)
+        theta_abs += init_heading_delta * decay * decay * (3.0 - 2.0 * decay)
 
     dx_arr = step_sizes * np.cos(theta_abs)
     dy_arr = step_sizes * np.sin(theta_abs)

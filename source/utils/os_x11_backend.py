@@ -852,7 +852,6 @@ def press(keys, presses=1, interval=0.1, delay=0.09):
             time.sleep(key_hold)
 
         for kc in reversed(ecodes):
-            _fail_safe_check()
             dev.write(e.EV_KEY, kc, 0) # Release
             dev.syn()
 
