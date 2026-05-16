@@ -301,7 +301,6 @@ def chain(gear_start, gear_end, background):
             win_moveTo(x + 68, y + 80, duration=0.15, tsize=(60, 60), inertia=True)
         x += 115
     win_moveTo(x + 91, y + 131, duration=0.15, tsize=(40, 40), inertia=True)
-    print(y+140)
     gui.mouseUp()
 
 

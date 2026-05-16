@@ -109,6 +109,8 @@ def click_bonus():
         now_rgb.button("bonus", "hardbonus", click=True)
     else:
         now_rgb.button("bonus", click=True)
+    x, y = random.randint(770, 1080), random.randint(428, 500)
+    win_moveTo(x, y)
 
 def bonus_gone():
     if p.HARD:
