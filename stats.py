@@ -19,6 +19,8 @@ class Floor:
         self.pack = pack
 
     def add_event(self, time, event):
+        if event not in self.battles:
+            return
         self.battles[event].append(time)
     
     def end(self, end_time):
