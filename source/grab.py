@@ -213,7 +213,7 @@ def grab_card():
             get_card(f"card{i}")
             wait_while_condition(
                 condition=lambda: now.button("encounterreward"), 
-                action=lambda: now_click.button("Confirm"), 
+                action=lambda: win_click(1255, 924) if now.button("Confirm") else None,
                 interval=0.1
             )
             return True

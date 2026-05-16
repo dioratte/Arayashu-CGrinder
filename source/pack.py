@@ -190,9 +190,10 @@ def pack():
         if not id is None:
             region = regions[id]
             x, y = (region[0] + (region[2] // 2), region[1] + (region[3] // 2))
-            x += random.randint(-90, 90)
+            x += random.randint(-40, 40)
             y += random.randint(-175, 175)
-            win_dragTo(x, y + 300, duration=0.31, start_x=x, start_y=y)
+            win_moveTo(x, y)
+            win_dragTo(x, y + 300, duration=0.31)
             break
         if skip != skips:
             win_click(1617, 62, tsize=(240, 60))

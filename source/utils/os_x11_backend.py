@@ -751,7 +751,7 @@ def dragTo(x, y, duration=0.1, button='left', tsize=(3.0, 3.0), start_x=None, st
         moveTo(start_x, start_y, tsize=tsize)
     mouseDown(button, delay=0.03)
     moveTo(x, y, duration=duration, tsize=tsize, n_sub=1, inertia=False)
-    mouseUp(button, delay=0)
+    mouseUp(button, delay=0.03)
 
     if hook:
         mouseDown(button, delay=0.03)

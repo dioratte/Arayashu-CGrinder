@@ -143,7 +143,7 @@ def inventory_check(reg, h, uptie_det=True):
     comp = p.WINDOW[2] / 1920
 
     fuse_shelf = screenshot(region=reg)
-    # cv2.imwrite(f"testing/fuse{time.time()}.png", fuse_shelf)
+    cv2.imwrite(f"testing/fuse{time.time()}.png", fuse_shelf)
     image = amplify(fuse_shelf)
 
     for i in range(len(p.GIFTS)):
@@ -217,7 +217,7 @@ def inventory_check(reg, h, uptie_det=True):
     return coords, coords_agg, have, uptie
 
 
-def browse(hook_x, step=150, adj=0, dur=0.3):
+def browse(hook_x, step=135, adj=0, dur=0.3):
     win_moveTo(hook_x, 480)
     win_dragTo(hook_x, 480 - step + adj, duration=dur, hook=True)
 
@@ -272,7 +272,7 @@ def get_inventory():
                     break
             else:
                 print("scroll up for invetory scan")
-                browse(hook_x, step=-150, adj=adj)
+                browse(hook_x, step=-135, adj=adj)
 
                 if LocateGray.check(PTH["gifts_owned"], region=REG["fuse_shelf"], wait=False):
                     break
@@ -351,7 +351,7 @@ def perform_clicks(to_click):
         if pos[2] - h > 0:
             print("iterating items for fuse")
             for _ in range(pos[2] - h):
-                browse(hook_x, step=-150, adj=adj)
+                browse(hook_x, step=-135, adj=adj)
                 ck = LocateRGB.locate(PTH["height_ck"], region=REG["fuse_shelf_low"])
                 adj = 607 - ck[1] if ck else 0
             h = pos[2]
@@ -674,10 +674,9 @@ def sell(gifts):
         if balance() < sum(gifts.values()):
             Action(p.SUPER, click=(600, 585), ver="sell").execute(click)
             found_flag = False
-            if now_rgb.button("scroll", "scroll_full"):
-                if search_sell((920, 295, 790, 345)):
-                    found_flag = True
-                    break
+            if search_sell((920, 295, 790, 345)):
+                found_flag = True
+            elif now_rgb.button("scroll", "scroll_full"):
                 hook_x = random.choice([1088, 1226, 1364, 1501])
                 while not now_rgb.button("scroll.0") and now_rgb.button("scroll", "scroll_full"):
                     print("scroll down for sell scan")
@@ -690,14 +689,11 @@ def sell(gifts):
                         found_flag = True
                         break
                     print("scroll up for sell click")
-                    browse(hook_x, step=-175, adj=adj)
+                    browse(hook_x, step=-165, adj=adj)
                     ck = LocateRGB.locate(PTH["height_ck"], region=(920, 585, 790, 165))
                     adj = 600 - ck[1] if ck else 0
-            else:
-                if search_sell((920, 295, 790, 345)):
-                    continue
             
-                if found_flag: continue
+            if found_flag: continue
             
             close_panel()
             return False # nothing to sell

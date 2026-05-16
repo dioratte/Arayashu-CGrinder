@@ -300,7 +300,8 @@ def chain(gear_start, gear_end, background):
         else:
             win_moveTo(x + 68, y + 80, duration=0.15, tsize=(60, 60), inertia=True)
         x += 115
-    win_moveTo(x + 80, y + 140, duration=0.15, tsize=(40, 40), inertia=True)
+    win_moveTo(x + 91, y + 131, duration=0.15, tsize=(40, 40), inertia=True)
+    print(y+140)
     gui.mouseUp()
 
 
@@ -353,7 +354,7 @@ def fight(lux=False):
                 time.sleep(0.5)
 
                 if is_focused and not loc.button("winrate_on", "winrate", wait=2, method=cv2.TM_SQDIFF_NORMED):
-                    gui.click()
+                    win_click(1385, 930)
 
                 if not lux and p.HARD: select_ego()
                 gui.press("enter", 1, 0.1)

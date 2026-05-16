@@ -66,8 +66,8 @@ def get_node_name(_loc, region):
 
 def position(shift=0):
     x, y = random.randint(1500, 1700), random.randint(300, 500)
-    win_moveTo(x, y)
-    win_dragTo(x - 265 , y + 80 + shift*300, duration=0.41, hook=True)
+    win_moveTo(x, y, tsize=(1, 1))
+    win_dragTo(x - 295, y + 100 + shift*320, duration=0.41, hook=True, tsize=(1, 1))
 
 def directions(is_aligned=True):
     options = {

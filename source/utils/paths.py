@@ -357,6 +357,7 @@ PACKS = {
     'LaManchaMaster'              : ((), (15,)),
     'Chachihu'                    : ((), (15,)),
     'MidspringDream2'             : ((), (15,)),
+    'The_BE'                      : ((), (3, 4, 5))
 }
 
 def packs_to_floors(packs, hard=False):

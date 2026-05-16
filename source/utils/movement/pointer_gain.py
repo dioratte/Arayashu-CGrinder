@@ -30,6 +30,10 @@ def update_pointer_scale(accumulated_raw, start_pos, current_pos):
 
     observed_scale = float(np.dot(actual_delta, raw_delta) / raw_norm_sq)
     current_scale = float(_POINTER_STATE["scale"])
+
+    if abs(observed_scale - current_scale) <= 0.03:
+        return
+
     print(f"Pointer speed detected: {observed_scale}")
     _POINTER_STATE["scale"] = (
         (1.0 - alpha) * current_scale +
