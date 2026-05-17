@@ -45,4 +45,4 @@ MOVE_ANIMATION = False
 # Macro behavior configuration.
 MACRO_PROFILE = "SAFE"
 MACRO_RHYTHM = True
-KEY_ERRORS = 8
+KEY_ERRORS = 0
