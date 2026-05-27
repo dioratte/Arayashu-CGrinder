@@ -1,5 +1,6 @@
 import logging, sys, os
 
+from source.utils.discord_webhook import WebhookLogHandler, create_handler_from_env
 
 def _is_onefile_temp_path(path: str) -> bool:
     normalized = os.path.normcase(os.path.abspath(path))
@@ -27,17 +28,39 @@ def _runtime_base_path():
     if appimage_path:
         return os.path.dirname(appimage_path)
 
-    # Nuitka sets __compiled__ for compiled modules.
-    if "__compiled__" in globals():
+    # Nuitka sets __compiled__; PyInstaller exposes sys.frozen.
+    if "__compiled__" in globals() or getattr(sys, "frozen", False):
         return _launched_executable_dir()
 
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
+
+def _detach_webhook_handlers():
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        if isinstance(handler, WebhookLogHandler):
+            root_logger.removeHandler(handler)
+            handler.close()
+
+
+def _attach_webhook_handler():
+    handler, error_message = create_handler_from_env()
+    if error_message:
+        logging.warning(error_message)
+        return
+
+    if handler:
+        logging.info("Discord webhook notifications enabled.")
+        logging.getLogger().addHandler(handler)
+
 def setup_logging(enable_logging: bool = True, log_file: str = "game.log", log_level=logging.INFO):
+    _detach_webhook_handlers()
+
     if not enable_logging:
         logging.disable(logging.CRITICAL)
         return
 
+    logging.disable(logging.NOTSET)
     base_path = _runtime_base_path()
 
     log_path = os.path.join(base_path, log_file)
@@ -48,6 +71,7 @@ def setup_logging(enable_logging: bool = True, log_file: str = "game.log", log_l
         level=log_level,
         format="%(asctime)s - %(levelname)s - %(message)s"
     )
+    _attach_webhook_handler()
 
     original_excepthook = sys.excepthook
 
