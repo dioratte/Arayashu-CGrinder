@@ -15,6 +15,4 @@ from PySide6.QtGui import QIcon, QFont, QPixmap, QPainter, QIntValidator, QFontD
 from PySide6.QtCore import Qt, QTimer, QEvent, QPropertyAnimation, QObject, Signal as pyqtSignal, QThread, QSize, QRect, QPoint, QRegularExpression, Slot as pyqtSlot
 
 import webbrowser
-from urllib.request import urlopen, Request
-from urllib.error import HTTPError
-from urllib.parse import urlencode
+from urllib.request import urlopen

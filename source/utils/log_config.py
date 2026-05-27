@@ -1,6 +1,6 @@
 import logging, sys, os
 
-from source.utils.discord_webhook import WebhookLogHandler, create_handler_from_env
+from source.utils.discord_webhook import create_handler_from_env
 
 def _is_onefile_temp_path(path: str) -> bool:
     normalized = os.path.normcase(os.path.abspath(path))
@@ -34,43 +34,38 @@ def _runtime_base_path():
 
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-
-def _detach_webhook_handlers():
-    root_logger = logging.getLogger()
-    for handler in list(root_logger.handlers):
-        if isinstance(handler, WebhookLogHandler):
-            root_logger.removeHandler(handler)
-            handler.close()
-
-
 def _attach_webhook_handler():
     handler, error_message = create_handler_from_env()
     if error_message:
         logging.warning(error_message)
-        return
+        return False
 
     if handler:
-        logging.info("Discord webhook notifications enabled.")
         logging.getLogger().addHandler(handler)
+        logging.info("Discord webhook notifications enabled.")
+        return True
+
+    return False
 
 def setup_logging(enable_logging: bool = True, log_file: str = "game.log", log_level=logging.INFO):
-    _detach_webhook_handlers()
+    if enable_logging:
+        base_path = _runtime_base_path()
+        log_path = os.path.join(base_path, log_file)
+        print(f"Logging enabled. Log file: {log_path}")
 
-    if not enable_logging:
-        logging.disable(logging.CRITICAL)
-        return
+        logging.basicConfig(
+            filename=str(log_path),
+            level=log_level,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            force=True
+        )
+    else:
+        logging.basicConfig(
+            level=log_level,
+            handlers=[logging.NullHandler()],
+            force=True
+        )
 
-    logging.disable(logging.NOTSET)
-    base_path = _runtime_base_path()
-
-    log_path = os.path.join(base_path, log_file)
-    print(f"Logging enabled. Log file: {log_path}")
-
-    logging.basicConfig(
-        filename=str(log_path),
-        level=log_level,
-        format="%(asctime)s - %(levelname)s - %(message)s"
-    )
     _attach_webhook_handler()
 
     original_excepthook = sys.excepthook

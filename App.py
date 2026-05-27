@@ -1,10 +1,14 @@
+import json, os, threading
+from urllib.error import HTTPError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
 from source_app.utils import *
 from source_app.settings_manager import SettingsManager
 from source_app.widget import SelectizeWidget, IntField, AllIntField
 from source_app.button import CustomButton
 from source_app.run import VersionChecker, BotWorker
 from source_app.check_interception import check_windows
-import threading
 
 class MyApp(QWidget):
     webhook_test_result = pyqtSignal(bool, str)
@@ -1147,30 +1151,29 @@ class MyApp(QWidget):
                 return f"HTTP {error.code}: {error.reason} ({body_text[:160]})"
         return f"HTTP {error.code}: {error.reason}"
 
+    def _thread_id_test_hint(self, data, error):
+        if not data.get("thread_id"):
+            return ""
+        if not isinstance(error, HTTPError):
+            return ""
+        if error.code not in (400, 403, 404):
+            return ""
+        return " If this webhook targets a regular channel, clear Thread ID and try again."
+
     def _send_webhook_test_request(self, data):
-        def send_once(include_thread):
-            request = self._build_webhook_test_request(data, include_thread=include_thread)
+        def send_once():
+            request = self._build_webhook_test_request(data, include_thread=True)
             with urlopen(request, timeout=4):
                 pass
 
         try:
-            send_once(include_thread=True)
+            send_once()
             self._emit_webhook_test_result(True, "Test message sent successfully.")
             return
         except HTTPError as error:
-            # Common pitfall: thread_id set for non-thread destination.
-            if data["thread_id"] and error.code in (400, 403, 404):
-                try:
-                    send_once(include_thread=False)
-                    self._emit_webhook_test_result(
-                        True,
-                        "Test message sent successfully without Thread ID. Leave Thread ID empty for regular channels."
-                    )
-                    return
-                except Exception as second_error:
-                    error = second_error
             details = self._format_webhook_error(error)
-            self._emit_webhook_test_result(False, f"Failed to send test message: {details}")
+            hint = self._thread_id_test_hint(data, error)
+            self._emit_webhook_test_result(False, f"Failed to send test message: {details}{hint}")
         except Exception as error:
             details = self._format_webhook_error(error)
             self._emit_webhook_test_result(False, f"Failed to send test message: {details}")

@@ -86,7 +86,6 @@ class DiscordWebhookClient:
         self.thread_id = thread_id
         self.timeout = timeout
         self.max_retries = max_retries
-        self._thread_fallback_used = False
 
         self._queue = queue.Queue(maxsize=max_queue)
         self._stop_event = threading.Event()
@@ -105,15 +104,6 @@ class DiscordWebhookClient:
             params["thread_id"] = self.thread_id
         separator = "&" if "?" in self.webhook_url else "?"
         return f"{self.webhook_url}{separator}{urlencode(params)}"
-
-    def _fallback_without_thread(self):
-        if not self.thread_id or self._thread_fallback_used:
-            return False
-        self._thread_fallback_used = True
-        self.thread_id = None
-        self._execute_url = self._build_execute_url()
-        _warn_local("Thread ID was rejected by Discord. Retrying without thread_id.")
-        return True
 
     def start(self):
         if not self._worker.is_alive():
@@ -256,8 +246,10 @@ class DiscordWebhookClient:
                 pass
 
             status = err.code
-            if status in (400, 403, 404) and self._fallback_without_thread():
-                return True
+            if status == 400:
+                self._track_invalid()
+                self.disable("HTTP 400; check webhook URL/thread_id configuration")
+                return False
 
             if status in (401, 403):
                 self._track_invalid()
@@ -729,7 +721,10 @@ def create_handler_from_env():
     if "/api/webhooks/" not in webhook_url:
         return None, f"{WEBHOOK_ENV} is set but URL format is invalid."
 
-    thread_id = os.environ.get(THREAD_ENV, "").strip() or None
+    thread_id = os.environ.get(THREAD_ENV, "").strip()
+    if thread_id and not thread_id.isdigit():
+        return None, f"{THREAD_ENV} must contain digits only."
+    thread_id = thread_id or None
 
     try:
         client = DiscordWebhookClient(webhook_url=webhook_url, thread_id=thread_id)
