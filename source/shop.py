@@ -225,6 +225,7 @@ def browse_fast(hook_x, up=False):
     dy = -300 if not up else 300
     x_noise = random.randint(-50, 50)
     win_moveTo(hook_x + x_noise, 480)
+    # gui.scroll(dy//100)
     win_dragTo(hook_x, 480 + dy, duration=0.1)
 
 
@@ -853,6 +854,7 @@ def buy_some(rerolls=1, priority=False):
     keywordless = [{"buy": [name for name, state in p.KEYWORDLESS.items() if state > 1], "sin": True}]
     sold_all = False
     for _ in range(iterations):
+        # cv2.imwrite(f"data/buy/{time.time()}.png", screenshot(region=REG["buy_shelf"]))
         if not priority and not sold_all and balance() < 200:
             sold_all = not sell({"all": 300})
         if p.EXTREME:
@@ -875,6 +877,7 @@ def buy_some(rerolls=1, priority=False):
         elif balance() < 120: return
 
 def buy(missing):
+    # cv2.imwrite(f"data/buy/{time.time()}.png", screenshot(region=REG["buy_shelf"]))
     output = False
     keywordless = [{"buy": [name for name, state in p.KEYWORDLESS.items() if state > 1], "sin": True}]
     for aff in keywordless + p.GIFTS:

@@ -337,6 +337,7 @@ def fight(lux=False):
                 gear_start = gui.center(LocateEdges.try_locate(PTH["gear"], region=(0, 761, 900, 179), conf=0.7))
                 gear_end = gui.center(LocateEdges.try_locate(PTH["gear2"], region=(350, 730, 1570, 232), conf=0.7))
                 is_focused = False
+                # cv2.imwrite(f"data/battle_skills/{time.time()}.png", screenshot(region=(round(gear_start[0] + 100), 775, round(gear_end[0] - gear_start[0] - 200), 150)))
                 if lux or p.WINRATE: raise gui.ImageNotFoundException
                 background = screenshot(region=(round(gear_start[0] + 100), 775, round(gear_end[0] - gear_start[0] - 200), 10))
                 chain(gear_start, gear_end, background)
@@ -354,6 +355,8 @@ def fight(lux=False):
 
                 if is_focused and not loc.button("winrate_on", "winrate", wait=2, method=cv2.TM_SQDIFF_NORMED):
                     win_click(1385, 930)
+
+                # cv2.imwrite(f"data/battle_struggle/{time.time()}.png", create_mask(screenshot(region=(0, 820, 1920, 100)), (0, 220, 230), 20))
 
                 if not lux and p.HARD: select_ego()
                 gui.press("enter", 1, 0.1)

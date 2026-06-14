@@ -283,7 +283,7 @@ def move():
 
         for level, region in srch_regions.items():
             _loc = LocatePreset(image=screenshot(region=region), v_comp=v_list[level], distort=d_list[depth], conf=0.8, wait=False)
-            # cv2.imwrite(f"testing/region{depth}{level}.png", screenshot(region=region))
+            # cv2.imwrite(f"data/move/region{depth}{level}_{time.time()}.png", screenshot(region=region))
 
             if now_rgb.button("coin", region, conf=0.9):
                 if now_rgb.button("gift", region, conf=0.9):

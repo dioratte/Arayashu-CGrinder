@@ -442,13 +442,21 @@ def is_grayscale(img, threshold=20):
     return saturation.mean() < threshold
 
 
-class SIFTMatcher: # unlike other modules, this works only with 1920x1080
+class SIFTMatcher:
     def __init__(self, image=None, region=(0, 0, 1920, 1080), **sift_params):
         self.region = region
-        self.base_image = self._prepare_image(image, region)
+        self.comp = p.WINDOW[2] / 1920
+
+        self.base_color = self._prepare_image(image, region)
+        base_gray = cv2.cvtColor(self.base_color, cv2.COLOR_BGR2HSV)[:, :, 2]
+        # cv2.cvtColor(self.base_color, cv2.COLOR_BGR2GRAY)
+
+        sift_params.setdefault('nfeatures', 3000)
+        sift_params.setdefault('contrastThreshold', 0.00)
         self.sift = cv2.SIFT_create(**sift_params)
-        self.kp_base, self.des_base = self.sift.detectAndCompute(self.base_image, None)
-    
+        self.kp_base, self.des_base = self.sift.detectAndCompute(base_gray, None)
+        self._bf = cv2.BFMatcher(cv2.NORM_L2)
+
     @staticmethod
     def _prepare_image(image, region):
         x, y, w, h = region
@@ -472,72 +480,105 @@ class SIFTMatcher: # unlike other modules, this works only with 1920x1080
             scale = w / w_img
             img = cv2.resize(img, (w, int(h_img * scale)), interpolation=cv2.INTER_LINEAR)
         return img
-    
+
     @staticmethod
-    def _load_template(template):
+    def _load_color(template):
         if isinstance(template, str):
-            tpl = cv2.imread(template, cv2.IMREAD_GRAYSCALE)
-            if tpl is None:
-                raise FileNotFoundError(f"Template not found: {template}")
-            return tpl
-        elif isinstance(template, np.ndarray):
-            return template
-        else:
-            raise TypeError(f"Unsupported template type: {type(template)}")
-    
-    def _match_template(self, template, min_matches=40, inlier_ratio=0.25):
-        # comp = p.WINDOW[2] / 1920
-        template = SIFTMatcher._load_template(template)
-        # if comp != 1:
-        #     template = cv2.resize(template, None, fx=comp, fy=comp, interpolation=cv2.INTER_LINEAR)
-        
-        kp1, des1 = self.sift.detectAndCompute(template, None)
+            img = cv2.imread(template, cv2.IMREAD_COLOR)
+            if img is None:
+                raise FileNotFoundError(template)
+            return img
+        if isinstance(template, np.ndarray):
+            return cv2.cvtColor(template, cv2.COLOR_GRAY2BGR) if template.ndim == 2 else template
+        raise TypeError(type(template))
 
-        if des1 is None or self.des_base is None: return None
-        
-        bf = cv2.BFMatcher(cv2.NORM_L2)
-        good = bf.match(des1, self.des_base)
-        
-        if len(good) < min_matches: return None
+    def _prepare_template(self, template_color):
+        gray = cv2.cvtColor(template_color, cv2.COLOR_BGR2HSV)[:, :, 2]
+        if self.comp == 1.0:
+            return template_color, gray
+        inv = 1.0 / self.comp
+        interp = cv2.INTER_LINEAR if inv > 1 else cv2.INTER_AREA
+        color_r = cv2.resize(template_color, None, fx=inv, fy=inv, interpolation=interp)
+        gray_r  = cv2.resize(gray,           None, fx=inv, fy=inv, interpolation=interp)
+        return color_r, gray_r
 
-        src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-        dst_pts = np.float32([self.kp_base[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-        
-        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, maxIters=200)
-        if M is None or mask is None: return None
-        
-        matches_mask = mask.ravel().tolist()
-        # inlier_matches = [m for i, m in enumerate(good) if matches_mask[i]]
-        # img_matches = cv2.drawMatches(template, kp1, screenshot(region=search_region), kp2, inlier_matches, None, flags=2)
-        # cv2.imwrite(f"{time.time()}.png", img_matches)
-        
-        if sum(matches_mask) < inlier_ratio * len(good): return None
-        
-        h, w = template.shape
-        pts = np.float32([[0, 0], [0, h], [w, h], [w, 0]]).reshape(-1, 1, 2)
-        dst = cv2.perspectiveTransform(pts, M)
-        
-        x_coords = dst[:, 0, 0]
-        y_coords = dst[:, 0, 1]
-        x_min, x_max = min(x_coords), max(x_coords)
-        y_min, y_max = min(y_coords), max(y_coords)
-        
-        if (x_max - x_min < 2 * w) and (y_max - y_min < 2 * h):
-            x_full = int(x_min + self.region[0])
-            y_full = int(y_min + self.region[1])
-            width = int(x_max - x_min)
-            height = int(y_max - y_min)
+    def _color_score(self, template_color, M):
+        h, w = template_color.shape[:2]
+        try:
+            warped = cv2.warpPerspective(self.base_color, np.linalg.inv(M), (w, h))
+        except np.linalg.LinAlgError:
+            return 0.0
             
-            return (x_full, y_full, width, height)
+        blur_t = cv2.GaussianBlur(template_color, (5, 5), 0)
+        blur_w = cv2.GaussianBlur(warped, (5, 5), 0)
+
+        lab_t = cv2.cvtColor(blur_t, cv2.COLOR_BGR2Lab).astype(np.float32)
+        lab_w = cv2.cvtColor(blur_w, cv2.COLOR_BGR2Lab).astype(np.float32)
+        
+        rmse = np.sqrt(np.mean(np.sum((lab_t - lab_w) ** 2, axis=2)))
+        return float(np.clip(1.0 - rmse / 30.0, 0.0, 1.0))
+
+    def _geometry(self, kp1, des1, inlier_ratio=0.25):
+        if des1 is None or self.des_base is None:
+            return None
+        n_kp = len(kp1)
+        good = self._bf.match(des1, self.des_base)
+        if not good:
+            return None
+
+        src = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+        dst = np.float32([self.kp_base[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+        M, mask = cv2.findHomography(src, dst, cv2.RANSAC, maxIters=300)
+        if M is None or mask is None:
+            return None
+
+        n_inliers = int(mask.sum())
+        if n_inliers < inlier_ratio * len(good):
+            return None
+        
+        return M, mask, good, n_kp
     
-    def locate(self, template, **kwargs):
-        return self._match_template(template, **kwargs)
-    
-    def try_locate(self, template, **kwargs):
-        match = self._match_template(template, **kwargs)
-        if match is None:
-            raise gui.ImageNotFoundException
-        return match
+    def _locate(self, template, inlier_ratio=0.25, color_threshold=0.3):
+        tpl_color, tpl_gray = self._prepare_template(self._load_color(template))
+        kp1, des1 = self.sift.detectAndCompute(tpl_gray, None)
+        
+        while des1 is not None and len(kp1) > 0:
+            result = self._geometry(kp1, des1, inlier_ratio=inlier_ratio)
+            if result is None:
+                break
+            M, mask, good, n_kp = result
+
+            h, w = tpl_gray.shape
+            pts = np.float32([[0,0],[0,h],[w,h],[w,0]]).reshape(-1,1,2)
+            dst = cv2.perspectiveTransform(pts, M)
+            xs, ys = dst[:,0,0], dst[:,0,1]
+            x_min, x_max, y_min, y_max = xs.min(), xs.max(), ys.min(), ys.max()
+            
+            if x_max - x_min > 2*w or y_max - y_min > 2*h:
+                break
+
+            inlier_indices = {good[i].queryIdx for i, is_inlier in enumerate(mask) if is_inlier}
+            
+            keep_indices = [i for i in range(len(kp1)) if i not in inlier_indices]
+            if not keep_indices or len(keep_indices) == len(kp1):
+                break
+                
+            kp1 = [kp1[i] for i in keep_indices]
+            des1 = des1[keep_indices]
+
+            color = self._color_score(tpl_color, M)
+            if color < color_threshold:
+                continue
+
+            bbox = (int(x_min + self.region[0]), int(y_min + self.region[1]),
+                    int(x_max - x_min), int(y_max - y_min))
+            yield bbox
+
+    def locate_all(self, template, **kw):
+        return self._locate(template, **kw)
+
+    def locate(self, template, **kw):
+        return next(self.locate_all(template, **kw), None)
 
 
 class LocatePreset:

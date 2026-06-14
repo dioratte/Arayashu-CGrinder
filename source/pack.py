@@ -185,8 +185,8 @@ def pack():
 
     for skip in range(skips + 1):
         time.sleep(0.2)
+        # cv2.imwrite(f"data/pack/{time.time()}.png", screenshot(region=(161, 630, 1632, 140))) # debugging
         id = pack_eval(p.LVL, regions, skip, skips)
-        # cv2.imwrite(f"choices/pack{int(time.time())}.png", screenshot()) # debugging
         if not id is None:
             region = regions[id]
             x, y = (region[0] + (region[2] // 2), region[1] + (region[3] // 2))

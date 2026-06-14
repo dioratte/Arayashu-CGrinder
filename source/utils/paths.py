@@ -116,7 +116,7 @@ REG = {
     "Confirm"        : ( 791,  745,  336,  104),
     "Cancel"         : ( 660,  650,  278,   92),
     "EGObin"         : (  87,   49,   90,   90),
-    "EGO"            : (   0,  309, 1920,  110),
+    "EGO"            : (   0,  309, 1920,  115),
     "Owned"          : (   0,  216, 1725,   50),
     "Card"           : ( 219,  283, 1531,  242),
     "Confirm.1"      : (1118,  754,  189,   70),
@@ -357,7 +357,8 @@ PACKS = {
     'LaManchaMaster'              : ((), (15,)),
     'Chachihu'                    : ((), (15,)),
     'MidspringDream2'             : ((), (15,)),
-    'The_BE'                      : ((), (3, 4, 5))
+    'The_BE'                      : ((), (3, 4, 5)),
+    'MnesticExperience'           : ((5,), (5,))
 }
 
 def packs_to_floors(packs, hard=False):

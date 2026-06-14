@@ -158,6 +158,7 @@ def grab_EGO():
     print("grab ego check")
     owned_x = [p[0] + p[2] for p in LocateRGB.locate_all(PTH["Owned"], region=REG["Owned"])]
     image = screenshot(region=REG["EGO"])
+    # cv2.imwrite(f"data/grab/{time.time()}.png", image)
 
     cycle = 1
     trials = None
@@ -165,6 +166,7 @@ def grab_EGO():
         cycle = 2
         if p.EXTREME:
             trials = screenshot(region=REG["buffs"])
+            # cv2.imwrite(f"data/trials/{time.time()}.png", trials)
     elif p.BUFF[9] or p.BUFF[5]:
         for i in [2, 3]:
             if now.button(f"select{i}", "selectCount"):
@@ -208,6 +210,7 @@ def grab_card():
     win_moveTo(1000, 900)
     now_click.button("Cancel") # if was misclicked
     time.sleep(1.4)
+    # cv2.imwrite(f"data/cards/{time.time()}.png", screenshot(region=REG["Card"]))
     for i in p.CARD:
         if now.button(f"card{i}", "Card"):
             get_card(f"card{i}")

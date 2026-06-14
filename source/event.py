@@ -21,6 +21,7 @@ def event():
         
         if now.button("choices"):
             time.sleep(0.1)
+            # cv2.imwrite(f"data/choices/{time.time()}.png", screenshot(region=REG["textEGO"]))
             if now_click.button("textNew", "textEGO") and is_choice_made(): continue
             if now_click.button("textLvl", "textEGO") and is_choice_made(): continue
             if any(now_click.button(f"choice_{favorite}", "textEGO") for favorite in favorites) and is_choice_made(): continue
@@ -67,7 +68,7 @@ def event():
         now_click.button("Proceed")
         now_click.button("CommenceBattle")
 
-        if now.button("check"):
+        if now.button("check") or now.button("Commence"):
             matches = {
                 prob: now.button(prob, "probs")
                 for prob in PROBS
