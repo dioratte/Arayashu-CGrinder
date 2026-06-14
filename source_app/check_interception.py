@@ -49,12 +49,14 @@ def ensure_interception_driver(app_parent=None):
     return False
 
 
-def prompt_third_party_software(app_parent=None):
+def prompt_third_party_software(app_parent=None, details=""):
     msg = QMessageBox(app_parent)
     msg.setIcon(QMessageBox.Icon.Critical)
     msg.setWindowTitle("3rd Party Software Required")
     msg.setText("Required 3rd party software was not detected or failed to initialize.")
+    detail_text = f"Error details:\n{details}\n\n" if details else ""
     msg.setInformativeText(
+        detail_text +
         "Please check out my Discord server. "
         "If the invite link is expired, contact me directly.\n\n"
         f"Discord: {DISCORD_URL}\n"
@@ -84,6 +86,9 @@ def check_windows(app_parent=None):
         return False
     
     if RAISE_ERROR:
-        prompt_third_party_software(app_parent=app_parent)
+        prompt_third_party_software(
+            app_parent=app_parent,
+            details=BRIDGE_ERROR_MESSAGE,
+        )
         return False
     return True
