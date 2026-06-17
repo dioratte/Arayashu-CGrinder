@@ -467,11 +467,11 @@ class SIFTMatcher:
             img = cv2.imread(image)
             if img is None:
                 raise FileNotFoundError(f"Image not found: {image}")
-            img = img[y_d:y_d+h_d, x_d:x_d+w_d]
+            img = img[y_d:y_d+h_d, x_d:x_d+w_d].copy()
         elif image is None:
             img = screenshot(region=region)
         elif isinstance(image, np.ndarray):
-            img = image[y_d:y_d+h_d, x_d:x_d+w_d]
+            img = image[y_d:y_d+h_d, x_d:x_d+w_d].copy()
         else:
             raise TypeError(f"Unsupported image type: {type(image)}")
 
@@ -505,13 +505,13 @@ class SIFTMatcher:
     def _color_score(self, template_color, M):
         h, w = template_color.shape[:2]
         try:
+            blur_t = cv2.GaussianBlur(template_color, (5, 5), 0)
+            
             M_inv = np.linalg.inv(M)
-            # if np.any(np.abs(M_inv) > 1e9):
+            # if np.any(np.abs(M_inv) > 1e8):
             #     return 0.0
             
             warped = cv2.warpPerspective(self.base_color, M_inv, (w, h))
-
-            blur_t = cv2.GaussianBlur(template_color, (5, 5), 0)
             blur_w = cv2.GaussianBlur(warped, (5, 5), 0)
             lab_t = cv2.cvtColor(blur_t, cv2.COLOR_BGR2Lab).astype(np.float32)
             lab_w = cv2.cvtColor(blur_w, cv2.COLOR_BGR2Lab).astype(np.float32)
@@ -519,8 +519,34 @@ class SIFTMatcher:
             rmse = np.sqrt(np.mean(np.sum((lab_t - lab_w) ** 2, axis=2)))
             return float(np.clip(1.0 - rmse / 30.0, 0.0, 1.0))
         
-        except cv2.error: # sometimes some weird shit happens after cv2.warp
-            raise cv2.error(f"Error occurred while warping image with\ntemplate={template_color}\nM={M}")
+        except Exception as e: # sometimes some weird shit happens after cv2.warp
+            raise cv2.error(
+        f"""
+OpenCV failure in _color_score
+
+original_exception={repr(e)}
+
+template:
+    shape={template_color.shape}
+    dtype={template_color.dtype}
+    ndim={template_color.ndim}
+    contiguous={template_color.flags.c_contiguous}
+    strides={template_color.strides}
+
+base_color:
+    shape={self.base_color.shape}
+    dtype={self.base_color.dtype}
+    contiguous={self.base_color.flags.c_contiguous}
+    strides={self.base_color.strides}
+
+M:
+{M}
+
+det(M)={np.linalg.det(M)}
+
+OpenCV={cv2.__version__}
+"""
+            ) from e
             # return 0.0
 
     def _geometry(self, kp1, des1, inlier_ratio=0.25):
