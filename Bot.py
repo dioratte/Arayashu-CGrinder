@@ -20,14 +20,14 @@ import source.utils.params as p
 # INIT RUN
 
 start_locations = {
-    "Drive": 0, 
-    "MD": 1, 
-    "Start": 2, 
-    "enterInvert": 5, 
-    "ConfirmTeam": 6, 
-    "enterBonus": 12, 
-    "Confirm.0": 15, 
-    "refuse": 17, 
+    "Drive": 0,
+    "MD": 1,
+    "Start": 2,
+    "enterInvert": 5,
+    "ConfirmTeam": 6,
+    "enterBonus": 12,
+    "Confirm.0": 15,
+    "refuse": 17,
     "Confirm": 23
 }
 
@@ -70,9 +70,21 @@ def dungeon_start():
         ClickAction((1624, 882)),
 
         lambda: wait_while_condition(lambda: not now.button("loading"), lambda: gui.press("space") if now.button("Confirm") else None, timer=5),
+
+        lambda: ClickAction((985, 286)).execute(try_click),
+        lambda: time.sleep(1),
+        lambda: ClickAction((1060, 816)).execute(try_click),
+        lambda: time.sleep(1),
+        lambda: gui.press("enter"),
+        lambda: time.sleep(1),
+        lambda: gui.press("enter"),
+        lambda: time.sleep(1),
+        lambda: gui.press("enter"),
+        lambda: time.sleep(3),
+
         loading_halt
     ]
-    
+
     failed = 0
     while True:
         try:
@@ -250,14 +262,16 @@ def main_loop():
             else:
                 win_click(1117, 700)
             connection()
-        
+
         if now.button("victory"):
             logging.info('Run Completed')
+            p.DEFENSE_TURNS = 1
             dungeon_end()
             return True
 
         if now.button("defeat"):
             logging.info('Run Failed')
+            p.DEFENSE_TURNS = 1
             dungeon_fail()
             return False
 
@@ -287,14 +301,15 @@ def main_loop():
                     last_error = 0
                     p.LVL = 1
                     break
-            else: 
+            else:
                 # check if end
                 for key in end_locations.keys():
                     if now.button(key):
                         logging.info('Run Completed')
+                        p.DEFENSE_TURNS = 1
                         dungeon_end()
                         return True
-                
+
                 if last_error != 0:
                     if time.time() - last_error > 30:
                         handle_fuckup()
@@ -333,9 +348,9 @@ def set_team(team, teams, keywordless):
 
     logging.info(f'Team: {p.TEAM[0]}')
     logging.info(f'Group: {p.TEAM[0]}#{p.NAME_ORDER + 1}')
-    
+
     difficulty = "HARD" if p.HARD else "NORMAL"
-    if p.EXTREME: 
+    if p.EXTREME:
         difficulty = "EXTREME"
         lunar_comp = list(set(["slashmemory", "piercememory", "bluntmemory"]) - set([f"{name.lower()}memory" for name in p.TEAM]))
         stones = [f"stone{i}" for i in range(7)] + lunar_comp
@@ -375,7 +390,7 @@ def execute_me(count, count_exp, count_thd, teams, settings, hard, app, warning)
             if team_keys and p.APP: QMetaObject.invokeMethod(p.APP, "lux_hide", Qt.ConnectionType.QueuedConnection)
             elif p.ALTF4_lux:
                 close_limbus()
-            
+
         if team_keys:
             print("Entering MD!")
             rotator = cycle(team_keys)
@@ -399,4 +414,3 @@ def execute_me(count, count_exp, count_thd, teams, settings, hard, app, warning)
 
     QMetaObject.invokeMethod(p.APP, "stop_execution", Qt.ConnectionType.QueuedConnection)
     return
-

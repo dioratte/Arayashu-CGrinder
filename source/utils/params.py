@@ -23,6 +23,7 @@ KEYWORDLESS = {}
 HARD = False
 EXTREME = False
 APP = None
+DEFENSE_TURNS = 1
 
 PICK = {}
 IGNORE = {}

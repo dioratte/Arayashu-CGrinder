@@ -80,6 +80,8 @@ REG = {
     "ConfirmInvert.1": ( 987,  704,  318,  130),
     "infinite_off"   : (1690,  500,   45,   30),
     "out_of_fuel"    : ( 750,  150,  424,   66),
+    "keywordless"    : ( 116,  337, 1069,  597),
+    "spiderweb"      : (1245,  315,  530,  150),
     # regions not binded to an image
     "money!"         : (1526,   52,   80,   30),
     "gifts!"         : (1173,  324,  129,  125),
@@ -98,6 +100,7 @@ REG = {
     "ego_usage"      : (1850, 1020,   70,   60),
     "RetryStage"     : ( 937,  476,  170,   46),
     "Confirm_retry"  : ( 829,  763,  278,   53),
+    "arayashu"       : (   0,  940, 1920,  140),
 
     # event.py
     "textEGO"        : (1031,  254,  713,  516),
