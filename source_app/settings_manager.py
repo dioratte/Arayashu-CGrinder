@@ -211,10 +211,10 @@ class SettingsManager(QObject):
             return [list1, list2, dict1, dict2]
         
         def is_valid_settings_structure(value):
-            if not (isinstance(value, list) and len(value) == 17): return False
+            if not (isinstance(value, list) and len(value) == 18): return False
 
-            for i in range(17):
-                if i < 7 and not isinstance(value[i], bool):
+            for i in range(18):
+                if i < 8 and not isinstance(value[i], bool):
                     return False
                 elif not (isinstance(value[i], int) and 0 <= value[i] <= 3):
                     return False
@@ -313,14 +313,14 @@ class SettingsManager(QObject):
             del data["AFFINITY"]
 
         def is_valid_extra_structure(extra_data):
-            if not (isinstance(extra_data, list) and len(extra_data) == 8):
+            if not (isinstance(extra_data, list) and len(extra_data) == 9):
                 return False
             counts = extra_data[:3]
             if counts[0] == -1: counts[0] = 9999 # only needed for checks
             if not all(isinstance(x, int) and x in range(10000) for x in counts):
                 return False
             settings = extra_data[3:]
-            if not all(isinstance(x, bool) for x in settings): 
+            if not all(isinstance(x, bool) for x in settings):
                 return False
             if settings[1] and settings[4]: return False
             return True

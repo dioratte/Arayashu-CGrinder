@@ -520,10 +520,10 @@ class MyApp(QWidget):
             self.activate_ego_gifts({})
             buff = [1]*4 + [0]*6
             if self.hard:
-                on = [False, True, False, False, False, False, False]
+                on = [False, True, False, False, False, False, False, False]
                 self.set_buttons_active(on + buff)
             else:
-                on = [False, True, False, False, True, False, False]
+                on = [False, True, False, False, True, False, False, False]
                 self.set_buttons_active(on + buff)
             self.sm.delete_config()
             self.sm.save_settings()
@@ -893,6 +893,9 @@ class MyApp(QWidget):
             else:
                 self.buttons[f"on{i + 7}"].setChecked(False)
                 self.buttons[f"on{i + 7}"].setIcon(QIcon())
+
+            if len(state) > 8:
+                self.hos_mode.setChecked(bool(state[8]))
     
     def save_affinity(self):
         state = dict()
@@ -904,6 +907,7 @@ class MyApp(QWidget):
         extra = [self.count, self.count_exp, self.count_thd]
         for i in range(5):
             extra.append(self.buttons[f"on{i + 7}"].isChecked())
+        extra.append(self.hos_mode.isChecked())
         self.sm.set_extra(extra)
         self.sync_webhook_settings(show_message=False)
         self.sm.save_settings()
@@ -919,13 +923,13 @@ class MyApp(QWidget):
         self.set_widgets()
         buff = [1]*4 + [0]*6
         if self.hard:
-            on = [False, True, False, False, False, False, False]
+            on = [False, True, False, False, False, False, False, False]
             self.set_buttons_active(on + buff)
             self.buttons['on0'].config['icon'] = Bot.APP_PTH['sel1_hard']
             for lbl in self.hard_confs:
                 lbl.show()
         else:
-            on = [False, True, False, False, True, False, False]
+            on = [False, True, False, False, True, False, False, False]
             self.set_buttons_active(on + buff)
             self.buttons['on0'].config['icon'] = Bot.APP_PTH['sel1_extra']
             for lbl in self.hard_confs:
@@ -1252,6 +1256,7 @@ class MyApp(QWidget):
         activated = []
         for i in range(7):
             activated.append(self.buttons[f'on{i}'].isChecked())
+        activated.append(self.hos_mode.isChecked())
         for i in range(10):
             activated.append(getattr(self.buttons[f'buff{i}'], 'config', {}).get('state', 0))
         return activated
@@ -1303,6 +1308,9 @@ class MyApp(QWidget):
             button.setIconSize(button.size())
             if 'state' in getattr(button, 'config', {}):
                 button.config['state'] = int(state)
+
+        if len(states) > 17:
+            self.hos_mode.setChecked(bool(states[17]))
 
 
     def activate_ego_gifts(self, data):
