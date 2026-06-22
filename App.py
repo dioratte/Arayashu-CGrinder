@@ -827,7 +827,7 @@ class MyApp(QWidget):
         for name, settings in all_buttons:
             self.buttons[name] = CustomButton(self, settings)
 
-        for name, settings in self._get_button_on()[:8] + self._get_card_order() + self._get_buff():
+        for name, settings in self._get_button_on()[:7] + self._get_card_order() + self._get_buff():
             self.buttons[name] = CustomButton(self.config, settings)
 
         for name, settings in self._get_button_on()[7:]:
