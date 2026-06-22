@@ -61,29 +61,47 @@ def dungeon_start():
         lambda: now_click.button("starlight"),
         Action("Confirm.0", ver="refuse"),
 
-        lambda: time.sleep(0.2),
-        lambda: now_click.button("giftSearch"),
-        ClickAction(p.GIFTS[0]["checks"][2], ver="gifts!"),
-        lambda: ClickAction((1239, 395), ver="selected!").execute(try_click) if (p.BUFF[3] or p.GIFTS[0]['checks'][5] == 0) else None,
-        lambda: ClickAction((1239, 549), ver="selected!").execute(try_click) if (p.BUFF[3] or p.GIFTS[0]['checks'][5] == 1) else None,
-        lambda: ClickAction((1239, 703), ver="selected!").execute(try_click) if p.BUFF[9] else None,
-        ClickAction((1624, 882)),
+        lambda: time.sleep(0.2)
 
-        lambda: wait_while_condition(lambda: not now.button("loading"), lambda: gui.press("space") if now.button("Confirm") else None, timer=5),
-
-        lambda: ClickAction((985, 286)).execute(try_click),
-        lambda: time.sleep(1),
-        lambda: ClickAction((1060, 816)).execute(try_click),
-        lambda: time.sleep(1),
-        lambda: gui.press("enter"),
-        lambda: time.sleep(1),
-        lambda: gui.press("enter"),
-        lambda: time.sleep(1),
-        lambda: gui.press("enter"),
-        lambda: time.sleep(3),
-
-        loading_halt
     ]
+
+    if p.HOS_MODE is False:
+        ACTIONS.extend([
+            lambda: now_click.button("giftSearchOn"),
+            ClickAction(p.GIFTS[0]["checks"][2], ver="gifts!"),
+            lambda: ClickAction((1239, 395), ver="selected!").execute(try_click) if (p.BUFF[3] or p.GIFTS[0]['checks'][5] == 0) else None,
+            lambda: ClickAction((1239, 549), ver="selected!").execute(try_click) if (p.BUFF[3] or p.GIFTS[0]['checks'][5] == 1) else None,
+            lambda: ClickAction((1239, 703), ver="selected!").execute(try_click) if p.BUFF[9] else None,
+            ClickAction((1624, 882)),#
+
+            lambda: wait_while_condition(lambda: not now.button("loading"), lambda: gui.press("space") if now.button("Confirm") else None, timer=5),
+            loading_halt
+            ])
+    else:
+        ACTIONS.extend([
+            lambda: now_click.button("giftSearch"),
+            ClickAction(p.GIFTS[0]["checks"][2], ver="gifts!"),
+            lambda: ClickAction((1239, 395), ver="selected!").execute(try_click) if (p.BUFF[3] or p.GIFTS[0]['checks'][5] == 0) else None,
+            lambda: ClickAction((1239, 549), ver="selected!").execute(try_click) if (p.BUFF[3] or p.GIFTS[0]['checks'][5] == 1) else None,
+            lambda: ClickAction((1239, 703), ver="selected!").execute(try_click) if p.BUFF[9] else None,
+            ClickAction((1624, 882)),
+
+            lambda: wait_while_condition(lambda: not now.button("loading"), lambda: gui.press("space") if now.button("Confirm") else None, timer=5),
+
+            lambda: ClickAction((985, 286)).execute(try_click),
+            lambda: time.sleep(1),
+            lambda: ClickAction((1060, 816)).execute(try_click),
+            lambda: time.sleep(1),
+            lambda: gui.press("enter"),
+            lambda: time.sleep(1),
+            lambda: gui.press("enter"),
+            lambda: time.sleep(1),
+            lambda: gui.press("enter"),
+            lambda: time.sleep(3),
+
+            loading_halt
+            ])
+
 
     failed = 0
     while True:

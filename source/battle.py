@@ -317,12 +317,11 @@ def chain(gear_start, gear_end, background):
     # print(moves)
     # Chaining
 
-    win_moveTo(gear_start)
-    gui.mouseDown()
-    x += 75
     if p.HOS_MODE is False:
+        win_moveTo(gear_start)
+        gui.mouseDown()
+        x += 75
         y -= 46
-
         for i in range(skill_num):
             if moves[i]:
                 win_moveTo(x + 68, y + 190, duration=0.15, tsize=(60, 60), inertia=True)
@@ -330,16 +329,17 @@ def chain(gear_start, gear_end, background):
                 win_moveTo(x + 68, y + 80, duration=0.15, tsize=(60, 60), inertia=True)
             x += 115
         win_moveTo(x + 91, y + 131, duration=0.15, tsize=(25, 25), inertia=True)
-
+        gui.mouseUp()
     else:
+        win_moveTo(gear_start)
+        gui.mouseDown()
+        x += 75
         y += 46
-
         for i in range(skill_num):
-            win_moveTo(x + 68, y + 90, duration=0.15, tsize=(60, 60), inertia=True)
+            win_moveTo(x + 68, y + 80, duration=0.15, tsize=(60, 60), inertia=True)
             x += 115
-            win_moveTo(x + 91, y, duration=0.15, tsize=(25, 25), inertia=True)
-
-    gui.mouseUp()
+        win_moveTo(x + 91, y, duration=0.15, tsize=(25, 25), inertia=True)
+        gui.mouseUp()
 
 
 
@@ -384,7 +384,7 @@ def fight(lux=False):
                     chain(gear_start, gear_end, background)
 
                 else:
-                    if p.DEFENSE_TURNS < 5 or p.SELECTED - p.DEAD != 1:
+                    if p.DEFENSE_TURNS < 5:
                         defense_skill()
                         gear_start = gui.center(LocateEdges.try_locate(PTH["gear"], region=(0, 761, 900, 179), conf=0.7))
                         gear_end = gui.center(LocateEdges.try_locate(PTH["gear2"], region=(350, 730, 1570, 232), conf=0.7))
