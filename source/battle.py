@@ -299,17 +299,6 @@ def select(sinners):
     )
     loading_halt()
 
-
-def skill3_columns(background, gear_start, skill_num):
-    """Columns with an S3 skill, via sin-colour detection."""
-    cols = set()
-    for sin in sins.keys():
-        for coord in find_skill3(background, sins[sin], sin=sin):
-            col = int(min(max((coord - 14 + 80*(2*((coord + gear_start[0] + 100)/1920) - 1)) // 115,
-                              0), skill_num - 1))
-            cols.add(col)
-    return cols
-
 def chain(gear_start, gear_end, background):
     # Finding skill3 positions
     x, y = gear_start
@@ -337,6 +326,7 @@ def chain(gear_start, gear_end, background):
         x += 115
     win_moveTo(x + 91, y, duration=0.15, tsize=(25, 25), inertia=True)
     gui.mouseUp()
+
 
 
 
@@ -370,7 +360,7 @@ def fight(lux=False):
             ck = True
             is_focused = True
             try:
-                if p.DEFENSE_TURNS < 5:
+                if p.DEFENSE_TURNS < 5 or p.SELECTED - p.DEAD != 1:
                     defense_skill()
                     gear_start = gui.center(LocateEdges.try_locate(PTH["gear"], region=(0, 761, 900, 179), conf=0.7))
                     gear_end = gui.center(LocateEdges.try_locate(PTH["gear2"], region=(350, 730, 1570, 232), conf=0.7))
