@@ -371,6 +371,7 @@ def execute_me(count, count_exp, count_thd, teams, settings, hard, app, warning)
     p.CARD = settings['card']
     p.WISHMAKING = settings['wishmaking']
     p.WINRATE = settings['winrate']
+    p.HOS_MODE = settings['hos_mode']
     p.EXTREME = settings['infinity']
     p.APP = app
     p.WARNING = warning

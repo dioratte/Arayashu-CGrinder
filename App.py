@@ -283,6 +283,7 @@ class MyApp(QWidget):
             return field
 
         add_button("webhook_open", "Discord Webhook", self.config, (44, 82, 192, 28), 13, self.toggle_webhook_panel)
+        add_button("hos_mode", "Arayashu", self.config, (244, 82, 192, 28), 13, self.update_button_icons, checkable=True)
 
         self.webhook_panel = QFrame(self.config)
         self.webhook_panel.setGeometry(24, 104, 652, 560)
@@ -643,7 +644,7 @@ class MyApp(QWidget):
                 'icon': Bot.APP_PTH['sel_lux']
             }) for i in range(5)
         ]
-    
+
     def _get_buff(self):
         return [
             (f'buff{i}', {
@@ -826,8 +827,9 @@ class MyApp(QWidget):
         for name, settings in all_buttons:
             self.buttons[name] = CustomButton(self, settings)
 
-        for name, settings in self._get_button_on()[:7] + self._get_card_order() + self._get_buff():
+        for name, settings in self._get_button_on()[:8] + self._get_card_order() + self._get_buff():
             self.buttons[name] = CustomButton(self.config, settings)
+
         for name, settings in self._get_button_on()[7:]:
             self.buttons[name] = CustomButton(self.lux, settings)
 
@@ -1728,6 +1730,7 @@ class MyApp(QWidget):
             'wishmaking' : self.buttons['on5'].isChecked(),
             'winrate'    : self.hard or self.buttons['on6'].isChecked(),
             'infinity'   : self.hard and self.buttons['on6'].isChecked(),
+            'hos_mode'   : self.buttons['hos_mode'].isChecked(),
             'buff'       : [getattr(self.buttons[f'buff{i}'], 'config', {}).get('state', 0) for i in range(10)],
             'card'       : self.get_cards(),
             'keywordless': {Bot.WORDLESS[id]['name']: state for id, state in self.keywordless.items()}
