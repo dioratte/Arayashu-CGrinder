@@ -3,7 +3,8 @@ name: Build Windows
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # Allows manual trigger
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -22,9 +23,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt nuitka
 
-      - name: Build with Nuitka
+      - name: Build with Nuitka (Onefile)
         run: |
-          python -m nuitka --onefile --enable-plugin=pyside6 --windows-console-mode=disable --output-dir=build App.py
+          python -m nuitka --onefile ^
+            --enable-plugin=pyside6 ^
+            --windows-console-mode=disable ^
+            --assume-yes-for-downloads ^
+            --windows-icon-from-ico=ImageAssets/app_icon.ico ^
+            --include-data-dir=ImageAssets/UI=ImageAssets/UI ^
+            --include-data-dir=ImageAssets/AppUI=ImageAssets/AppUI ^
+            --include-data-files=version=version ^
+            --include-data-files=source/utils/movement/model.npz=move_assets/model.npz ^
+            --include-data-files=source/utils/bridge/bridge.dll=move_assets/bridge.dll ^
+            --output-dir=build ^
+            App.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
