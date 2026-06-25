@@ -46,9 +46,9 @@ def reroll_until_skill3():
             buy_skill3()
             if now.button("purchased") or now.button("cost", "purchased"):
                 print("Bought Skill 3")
-                break  # skill 3 was bought
+                break
             if balance() < 200:
-                break  # can't afford to reroll
+                break
             win_click(1489, 177, tsize=(180, 53))
             connection()
             time.sleep(0.1)
@@ -1017,17 +1017,20 @@ def revive_idiots():
         time.sleep(0.2)
 
     def heal_all():
-        if balance() < 100: return
+        if p.HOS_MODE is True:
+            return
+        else:
+            if balance() < 100: return
 
-        ClickAction((293, 705), ver="return").execute(click)
-        try:
-            ClickAction((1545, 500), ver="connecting").execute(click)
-            connection()
-            time.sleep(0.2)
-        finally:
-            ClickAction((1545, 500), ver="return").execute(click)
-            Action("return", ver=p.SUPER).execute(click)
-            time.sleep(0.2)
+            ClickAction((293, 705), ver="return").execute(click)
+            try:
+                ClickAction((1545, 500), ver="connecting").execute(click)
+                connection()
+                time.sleep(0.2)
+            finally:
+                ClickAction((1545, 500), ver="return").execute(click)
+                Action("return", ver=p.SUPER).execute(click)
+                time.sleep(0.2)
 
 ### General
 def leave():
@@ -1054,6 +1057,9 @@ def shop():
                 timer=2
             )
         ): return False
+
+    if p.HOS_MODE is True:
+        buy_skill3()
 
     if p.DEAD > 0 and p.HARD:
         revive_idiots()
