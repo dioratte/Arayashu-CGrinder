@@ -1,5 +1,5 @@
 __pycache__
-venv
+.venv
 build
 dist
 AppDir
@@ -14,3 +14,4 @@ convert_ego.py
 os_wayland_backend.py
 input_api
 test.py
+App.dist
