@@ -2,6 +2,7 @@ from source.utils.utils import *
 from source.event import event
 import source.utils.params as p
 from itertools import product
+import math as m
 
 
 exit_if = ["loading", "Move", "EGObin", "encounterreward", "victory", "defeat", "PackChoice"]
@@ -54,6 +55,20 @@ best2 = [
     "GardenofThorns", "AEDD", "Lantern", "CavernousWailing", "Capote", "Pursuance", "Regret", "RimeShank", "WishingCairn",
     "ElectricScreaming", "4thMatchFlame", "RedEyesOpen", "ArdorBlossomStar", "BlindObsession", "FluidSac", "HexNail"
 ]
+
+# Checks how many times it should use defense skills
+def defense_turns():
+    if len(p.SELECTED) == 1:
+        logging.info("Didya forget to turn off Arayashu runs, Yoshihide?")
+        return
+    else:
+        if len(p.SELECTED) > 10:
+            p.MAX_DEFENSE = 5
+            logging.info("You selected more than 10 sinners, why?")
+        else:
+            # MAX_DEFENSE increases with every odd number of selected sinners
+            for i in range(m.ceil((len(p.SELECTED) - p.DEAD) / 2)):
+                p.MAX_DEFENSE += 1
 
 def get_lowskill():
     image = screenshot(region=(0, 820, 1920, 100))
@@ -332,7 +347,7 @@ def chain(gear_start, gear_end, background):
         gui.mouseUp()
 
     else:
-        if p.DEFENSE_TURNS < 5:
+        if p.DEFENSE_TURNS < p.MAX_DEFENSE:
             win_moveTo(gear_start)
             gui.mouseDown()
             x += 75
@@ -381,6 +396,8 @@ def fight(lux=False):
     print("Entered Battle")
     last_error = 0
     attempts = 0
+    if p.MAX_DEFENSE == 0:
+        defense_turns()
     while True:
         ck = False
         if loc.button("winrate", wait=1):
@@ -398,11 +415,12 @@ def fight(lux=False):
                     chain(gear_start, gear_end, background)
 
                 else:
-                    if p.DEFENSE_TURNS < 5:
+                    if p.DEFENSE_TURNS < p.MAX_DEFENSE:
                         defense_skill()
                         gear_start = gui.center(LocateEdges.try_locate(PTH["gear"], region=(0, 761, 900, 179), conf=0.7))
                         gear_end = gui.center(LocateEdges.try_locate(PTH["gear2"], region=(350, 730, 1570, 232), conf=0.7))
                         is_focused = False
+                        # cv2.imwrite(f"data/battle_skills/{time.time()}.png", screenshot(region=(round(gear_start[0] + 100), 775, round(gear_end[0] - gear_start[0] - 200), 150)))
                         if lux or p.WINRATE: raise gui.ImageNotFoundException
                         background = screenshot(region=(round(gear_start[0] + 100), 775, round(gear_end[0] - gear_start[0] - 200), 10))
                         chain(gear_start, gear_end, background)

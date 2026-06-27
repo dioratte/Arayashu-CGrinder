@@ -838,6 +838,8 @@ def get_shop(shop_shelf):
 def buy_known(aff):
     shop_shelf = update_shelf()
     output = False
+    if p.HOS_MODE:
+        buy_skill3()
     for gift in aff["buy"]:
         try:
             res = gui.center(LocateRGB.try_locate(PTH[gift], image=shop_shelf, region=REG["buy_shelf"], comp=0.75, conf=0.83))
@@ -1051,9 +1053,6 @@ def shop():
                 timer=2
             )
         ): return False
-
-    if p.HOS_MODE is True:
-        buy_skill3()
 
     if p.DEAD > 0 and p.HARD:
         if not p.HOS_MODE:
