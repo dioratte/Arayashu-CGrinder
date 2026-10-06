@@ -690,8 +690,14 @@ def search_sell(reg):
     return False
 
 def sell(gifts):
+    money = None
     while True:
-        if balance() < sum(gifts.values()):
+        update_money = balance()
+        if money is not None and update_money == money:
+            return False
+        money = update_money
+
+        if money < sum(gifts.values()):
             Action(p.SUPER, click=(600, 585), ver="sell").execute(click)
             time.sleep(0.2)
             found_flag = False
